@@ -1,0 +1,38 @@
+# Oscillators
+
+## RSI - Relative Strength Index
+
+Momentum oscillator (0-100). Below 30 = oversold, above 70 = overbought.
+
+```pypscript
+rsi.evaluate(source, period)
+rsi.evaluate(close, 14)  // Standard 14-period RSI
+```
+
+**Parameters:**
+- `source`: Price source
+- `period`: Number of periods (2-50)
+
+## MACD
+
+Moving Average Convergence Divergence.
+
+```pypscript
+macd.evaluate(source, fast, slow, signal)
+macd.evaluate(close, 12, 26, 9)  // Standard MACD
+```
+
+**Parameters:**
+- `source`: Price source
+- `fast`: Fast EMA period (1-50)
+- `slow`: Slow EMA period (1-100)
+- `signal`: Signal line EMA period (1-50)
+
+## Stochastic
+
+Compares closing price to price range.
+
+```pypscript
+stoch.evaluate(k_period, d_period)
+stoch.evaluate(14, 3)  // Standard stochastic
+```

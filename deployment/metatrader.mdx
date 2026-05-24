@@ -1,0 +1,91 @@
+# MT4 and MT5
+
+PyP supports MetaTrader deployments through MT4 and MT5 channels.
+
+These channels are used when a deployment needs to reach a trading terminal instead of only sending alerts.
+
+## What MetaTrader Deployment Means
+
+When MT4 or MT5 is selected on a deployment, PyP sends the live signal stream to a terminal integration.
+
+That terminal setup is where execution happens.
+
+PyP still controls the deployment runtime settings, such as:
+
+- pair
+- timeframe
+- confidence threshold
+- stop loss / take profit
+- lot sizing mode
+- max concurrent trades
+- symbol mapping
+
+## MT4 vs MT5
+
+Both are supported as execution channels.
+
+Choose based on the terminal your broker or workflow already uses.
+
+Use MT4 when:
+
+- your broker account is MT4-based
+- your existing terminal workflow is MT4
+
+Use MT5 when:
+
+- your broker account is MT5-based
+- you want the newer terminal environment
+
+## Typical Setup Flow
+
+1. Connect an MT4 or MT5 channel in PyP.
+2. Open the deployment or subscription setup page.
+3. Select the MetaTrader channel.
+4. Configure runtime controls.
+5. Download the preset file for that exact setup.
+6. Load the preset in the terminal EA.
+
+## Runtime Controls That Matter Most
+
+MetaTrader deployments usually depend on:
+
+- execution mode
+- stop loss / take profit
+- risk percent or fixed lot
+- max spread
+- slippage tolerance
+- opposite-signal behavior
+- broker symbol mapping
+
+These values belong to the deployment or subscription setup, not the strategy code itself.
+
+## Subscriber Strategies
+
+For marketplace subscriptions, the MetaTrader deployment is attached to the subscriber's setup.
+
+That means:
+
+- the strategy logic comes from the creator
+- the runtime execution settings belong to the subscriber
+- the preset file should match that exact subscription
+
+## Best Practice
+
+Use web or Telegram delivery first if you want to observe the strategy live.
+
+Then add MT4 or MT5 when:
+
+- routing is confirmed
+- runtime settings are tuned
+- you are ready for terminal-side execution
+
+## Run 24/7 with PCE
+
+If you do not want your own machine to stay on all day, use [PCE — PyP Compute Environment](https://pyp.stanl.ink/pce-vps-for-mt4-and-mt5).
+
+PCE gives you:
+
+- a managed Windows VPS
+- MT4 or MT5 pre-installed
+- browser-based desktop access
+- a 24/7 environment for terminal-side execution

@@ -1,0 +1,54 @@
+# Live Deployment
+
+Quant deployments are the operational step where a trained and validated release becomes a live signal source.
+
+## Deployment inputs
+
+A healthy quant deployment should be based on:
+
+- a quant release
+- the artifact behind that release
+- the runtime compatibility of that artifact
+- the delivery channels attached to the deployment
+
+## Live inference flow
+
+At a high level:
+
+1. the market runtime detects a signal moment
+2. the quant runtime loads the artifact
+3. the runtime calls `predict(model, market_data, config)`
+4. the result is normalized into a deployment-safe signal
+5. the signal is routed to delivery channels
+
+## Delivery targets
+
+Quant live signals can be routed into:
+
+- Telegram
+- Discord
+- web dashboard feeds
+- MT4 / MT5 terminal workflows
+
+The important distinction is that PyP owns the runtime and routing layer even when the strategy logic came from user-authored Python.
+
+## Runtime compatibility
+
+Not every artifact target should run in the same runtime environment.
+
+That is why deployment must stay runtime-aware.
+
+Examples:
+
+- lightweight custom Python may fit the edge-safe path
+- preserved heavy exact-model families may require a container-backed runtime path
+
+This is not marketing language. It is capacity planning. Deployment should only be allowed when the runtime contract is honest.
+
+## Deployment best practice
+
+- deploy releases, not raw jobs
+- keep runtime package declarations explicit
+- choose the cheapest runtime that honestly supports the artifact
+- route to observation channels first if you want confidence before terminal execution
+

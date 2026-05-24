@@ -1,0 +1,287 @@
+# Pattern Matching
+
+Pattern matching is the center of PyPScript.
+
+Everything you calculate in the strategy block eventually becomes a pattern decision:
+
+- when should the script emit `UP`
+- when should it emit `DOWN`
+- when should it stay `HOLD`
+
+## Core Form
+
+```pypscript
+patterns {
+    condition -> SIGNAL(confidence: 0.80)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+A pattern has four parts:
+
+1. condition
+2. arrow `->`
+3. signal direction
+4. confidence
+
+## Valid Signal Directions
+
+- `UP`
+- `DOWN`
+- `HOLD`
+
+Typical meaning:
+
+- `UP` = bullish or long bias
+- `DOWN` = bearish or short bias
+- `HOLD` = no actionable edge right now
+
+## First Match Wins
+
+Patterns are evaluated from top to bottom.
+
+This matters a lot.
+
+```pypscript
+patterns {
+    above(rsi_value, 50) -> UP(confidence: 0.65)
+    above(rsi_value, 80) -> UP(confidence: 0.92)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+The `80` rule is never reached because anything above `80` is already above `50`.
+
+Correct ordering:
+
+```pypscript
+patterns {
+    above(rsi_value, 80) -> UP(confidence: 0.92)
+    above(rsi_value, 50) -> UP(confidence: 0.65)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## Simple Patterns
+
+```pypscript
+patterns {
+    above(close, trend_ma) -> UP(confidence: 0.72)
+    below(close, trend_ma) -> DOWN(confidence: 0.72)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## Multi-Condition Patterns
+
+Use `and`, `or`, and `not` to build more precise conditions.
+
+### `and`
+
+```pypscript
+patterns {
+    trend_up and momentum_up -> UP(confidence: 0.80)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+### `or`
+
+```pypscript
+patterns {
+    oversold or breakout -> UP(confidence: 0.72)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+### `not`
+
+```pypscript
+patterns {
+    trend_up and not overbought -> UP(confidence: 0.76)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+### Parentheses
+
+Use parentheses whenever grouping matters.
+
+```pypscript
+patterns {
+    (trend_up and momentum_up) or breakout -> UP(confidence: 0.82)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## Common Pattern Functions
+
+Most public PyPScript strategies use a small reliable set of functions:
+
+- `above(a, b)`
+- `below(a, b)`
+- `between(value, min, max)`
+- `cross(a, b)`
+
+Examples:
+
+```pypscript
+above(close, trend_ma)
+below(rsi_value, 30)
+between(rsi_value, 45, 60)
+cross(fast_ma, slow_ma)
+```
+
+## Confidence
+
+Confidence is required on every emitted signal.
+
+```pypscript
+UP(confidence: 0.84)
+DOWN(confidence: 0.79)
+HOLD(confidence: 0.95)
+```
+
+Practical guidance:
+
+- `0.90+` = very selective
+- `0.75 - 0.89` = strong
+- `0.60 - 0.74` = moderate
+- `0.50 - 0.59` = weak, usually too loose unless intentional
+
+Do not assign `0.95` just because a condition looks fancy. Confidence should reflect selectivity and quality, not ego.
+
+## The Default Rule
+
+Every strategy should end with:
+
+```pypscript
+default -> HOLD(confidence: 0.95)
+```
+
+That makes the no-trade state explicit.
+
+`HOLD` is not a failure. It is part of the strategy.
+
+Good strategies often spend a lot of time doing nothing.
+
+## Strong Pattern Design
+
+Strong patterns usually have:
+
+- one trend component
+- one momentum component
+- one trigger component
+- an explicit hold fallback
+
+Example:
+
+```pypscript
+trend_up = above(fast_ma, slow_ma)
+momentum_up = above(rsi_value, 55)
+entry_trigger = cross(close, fast_ma)
+
+patterns {
+    trend_up and momentum_up and entry_trigger -> UP(confidence: 0.85)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## Symmetry And Asymmetry
+
+Some strategies should be symmetric:
+
+```pypscript
+patterns {
+    trend_up and momentum_up and long_trigger -> UP(confidence: 0.84)
+    trend_down and momentum_down and short_trigger -> DOWN(confidence: 0.84)
+    default -> HOLD(confidence: 0.96)
+}
+```
+
+Others should not.
+
+If a market behaves differently on the long side and short side, your patterns should reflect that. Do not force fake symmetry.
+
+## Pattern Design Mistakes
+
+## 1. Overlapping Rules
+
+```pypscript
+patterns {
+    trend_up -> UP(confidence: 0.60)
+    trend_up and momentum_up -> UP(confidence: 0.85)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+The stronger rule is unreachable.
+
+## 2. Contradictory Conditions
+
+```pypscript
+patterns {
+    above(rsi_value, 70) and below(rsi_value, 30) -> UP(confidence: 0.90)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+That condition can never be true.
+
+## 3. No True Hold State
+
+If everything maps to `UP` or `DOWN`, the strategy often becomes noisy and unrealistic.
+
+## 4. Giant Opaque Expressions
+
+If the pattern cannot be explained in plain English, break it into named variables first.
+
+## Good Pattern Example
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import indicators.rsi
+import indicators.atr
+import functions.above
+import functions.below
+import functions.cross
+
+strategy "pattern_quality_example" {
+    fast_ma = sma.evaluate(close, 20)
+    slow_ma = sma.evaluate(close, 50)
+    rsi_value = rsi.evaluate(close, 14)
+    atr_value = atr.evaluate(high, low, close, 14)
+
+    trend_up = above(fast_ma, slow_ma)
+    trend_down = below(fast_ma, slow_ma)
+    long_momentum = above(rsi_value, 55)
+    short_momentum = below(rsi_value, 45)
+    volatility_ok = above(atr_value, 0.0)
+    long_trigger = cross(close, fast_ma)
+    short_trigger = cross(fast_ma, close)
+
+    patterns {
+        trend_up and long_momentum and long_trigger and volatility_ok -> UP(confidence: 0.86)
+        trend_down and short_momentum and short_trigger and volatility_ok -> DOWN(confidence: 0.86)
+        default -> HOLD(confidence: 0.96)
+    }
+}
+```
+
+## Checklist For Better Patterns
+
+- strongest rules first
+- weaker rules later
+- explicit `default -> HOLD`
+- no contradictory logic
+- no hidden unreachable branches
+- confidence matches selectivity
+
+## Related Pages
+
+- [Variables & Data](./variables)
+- [Advanced Techniques](./advanced)
+- [Best Practices](./best-practices)

@@ -1,0 +1,27 @@
+# Volatility Indicators
+
+## ATR - Average True Range
+
+Measures market volatility.
+
+```pypscript
+atr.evaluate(period)
+atr.evaluate(14)
+```
+
+**Parameters:**
+- `period`: Number of periods (1-50)
+
+## Bollinger Bands
+
+Price channels based on standard deviation.
+
+```pypscript
+bb.evaluate(source, period, deviation)
+bb.evaluate(close, 20, 2)  // Standard Bollinger Bands
+```
+
+**Parameters:**
+- `source`: Price source
+- `period`: Moving average period (2-100)
+- `deviation`: Standard deviation multiplier (0.1-5)

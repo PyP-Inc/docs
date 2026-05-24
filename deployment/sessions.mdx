@@ -1,0 +1,74 @@
+# Live Sessions
+
+A live session is a deployment running your `.pyp` strategy and producing real-time decisions from live market data.
+
+Deployments in PyP are not limited to Telegram. A single session can route signals to one or more connected channels, including:
+
+- Telegram
+- Discord
+- WhatsApp
+- Web notifications
+- MT4
+- MT5
+
+The session is the runtime. Channels are the delivery or execution surfaces attached to that runtime.
+
+## Session Statuses
+
+| Status | Meaning |
+|--------|---------|
+| active | Running and generating signals |
+| paused | Paused, not generating signals |
+| stopped | Stopped |
+| error | Error occurred |
+
+## Starting a Session
+
+From your trained strategy, open **Deploy** and create a new session.
+
+Typical flow:
+
+1. Choose the strategy release you want to run.
+2. Set the pair and timeframe you want the deployment to monitor.
+3. Select one or more connected channels.
+4. Choose whether the deployment is alert-only, execution-only, or both.
+5. Start the session and monitor status from the deployments area.
+
+## Channel Types
+
+### Notification Channels
+
+Use these when you want signals delivered to people or communities:
+
+- Telegram
+- Discord
+- WhatsApp
+- Web
+
+### Execution Channels
+
+Use these when you want PyP signals to reach a trading terminal:
+
+- MT4
+- MT5
+
+Execution channels are usually paired with runtime settings such as:
+
+- confidence threshold
+- stop loss / take profit
+- lot sizing
+- max concurrent trades
+- broker symbol mapping
+
+## What a Deployment Stores
+
+A deployment typically includes:
+
+- the strategy release being run
+- pair and timeframe
+- selected channels
+- execution mode
+- runtime controls
+- current status
+
+This is why deployments are managed separately from the strategy code itself. The strategy defines signal logic. The deployment defines how and where those signals run.

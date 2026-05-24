@@ -1,0 +1,62 @@
+# Training Jobs
+
+Quant training is launched from the `Jobs` surface, not from the old PyPScript training wizard.
+
+The mental model is:
+
+- Research is where you author
+- Jobs is where you build
+- Artifacts is where you inspect outputs
+- Releases is where you package validated outputs
+
+## How quant training works
+
+1. Save `strategy.py` and `quant.config.json`
+2. Open `/quant/jobs`
+3. Launch a job with the selected preset
+4. PyP creates a `QUANT_JOB`
+5. GitHub Actions runs the training workflow
+6. The compiler uploads the artifact and metrics back into PyP
+7. The completed output appears in `Artifacts`
+
+## What the training environment does
+
+The training workflow:
+
+- writes the strategy and config to a temporary job workspace
+- downloads supported market data
+- imports the strategy module
+- calls `train(data, config)`
+- emits an artifact bundle plus metrics
+
+This is why the strategy contract and config shape matter so much. The training system is structured, not ad hoc.
+
+## Job statuses
+
+Typical statuses:
+
+| Status | Meaning |
+|--------|---------|
+| queued | Waiting to start |
+| running | GitHub Actions training in progress |
+| completed | Artifact and metrics uploaded successfully |
+| failed | Training or upload failed |
+
+## What to expect after completion
+
+A successful job should give you:
+
+- metrics
+- artifact records
+- versionable output for release creation
+
+It is better to think of a quant job as an artifact build step than as a one-off notebook run.
+
+## Best practice
+
+- keep presets narrow and intentional
+- compare jobs by metrics and artifact target
+- use releases to promote outputs, not raw jobs
+
+The job is an execution event. The artifact is what downstream runtime actually cares about.
+

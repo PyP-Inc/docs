@@ -1,0 +1,85 @@
+# Research Workspace
+
+The Quant Research workspace is the primary authoring surface for quant projects.
+
+It is not the old PyPScript editor. Quant projects should use `Research` as their main coding surface.
+
+## Supported files
+
+Today, the workspace intentionally supports only three files:
+
+- `strategy.py`
+- `quant.config.json`
+- `README.md`
+
+That restriction is intentional. It keeps the contract explicit and avoids pretending PyP already supports arbitrary multi-file Python packages.
+
+## What each file is for
+
+### `strategy.py`
+
+This is the executable strategy source.
+
+It contains:
+
+- imports for supported packages
+- helper functions
+- `train(data, config)`
+- `predict(model, market_data, config)`
+
+### `quant.config.json`
+
+This is the environment and runtime declaration for the strategy.
+
+It contains:
+
+- market targeting
+- parameters
+- training package declarations
+- inference compatibility declarations
+- artifact target selection
+
+### `README.md`
+
+This is human-facing documentation for the project.
+
+Use it for:
+
+- notes about the signal idea
+- assumptions
+- feature definitions
+- release context for teammates
+
+Do not use it for execution-critical configuration.
+
+## Why the workspace is constrained
+
+A real unrestricted Python project implies:
+
+- packaging rules
+- import resolution
+- dependency graphs
+- build context assembly
+- much more complex deployment behavior
+
+PyP does not expose that yet inside Quant Mode. The current Research workspace is a controlled environment optimized for a reliable training-to-artifact pipeline.
+
+## Expected workflow
+
+1. Start in `strategy.py`
+2. Configure market and artifact behavior in `quant.config.json`
+3. Keep notes in `README.md`
+4. Save the workspace
+5. Move to `Jobs` to run training
+
+## Best practice
+
+Keep the strategy contract explicit:
+
+- do feature preparation in named helpers
+- keep `train()` deterministic
+- keep `predict()` narrow and deployment-safe
+- document assumptions in `README.md`
+
+If you are trying to add many support modules, you are probably exceeding the current Research contract and should simplify the design before training.
+

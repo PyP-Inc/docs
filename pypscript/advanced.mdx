@@ -1,0 +1,221 @@
+# Advanced PyPScript Techniques
+
+Advanced PyPScript is not about making expressions longer.
+
+It is about making strategies more intentional:
+
+- cleaner regime filters
+- better long and short symmetry, or intentional asymmetry
+- more disciplined confidence ladders
+- better reuse of conditions
+
+## 1. Layered Confirmation
+
+A strong pattern usually has layers:
+
+- regime
+- direction
+- trigger
+
+Example:
+
+```pypscript
+trend_ma = sma.evaluate(close, 50)
+entry_ma = sma.evaluate(close, 20)
+rsi_value = rsi.evaluate(close, 14)
+
+trend_up = above(close, trend_ma)
+momentum_up = above(rsi_value, 55)
+entry_reclaim = cross(close, entry_ma)
+
+patterns {
+    trend_up and momentum_up and entry_reclaim -> UP(confidence: 0.86)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+Each line has a job:
+
+- `trend_up` says the market backdrop is acceptable
+- `momentum_up` says the move has internal support
+- `entry_reclaim` says the timing is here now
+
+## 2. Regime Filters
+
+Many bad strategies fail because they trade every environment.
+
+Use regime filters to say when a setup is even allowed.
+
+```pypscript
+atr_value = atr.evaluate(high, low, close, 14)
+volatility_ok = above(atr_value, 0.0)
+
+patterns {
+    trend_up and momentum_up and entry_reclaim and volatility_ok -> UP(confidence: 0.85)
+    default -> HOLD(confidence: 0.96)
+}
+```
+
+A regime filter should do one thing clearly:
+
+- trend only
+- volatility only
+- momentum only
+
+Do not overload one variable with three meanings.
+
+## 3. Asymmetric Long And Short Logic
+
+Markets often do not behave symmetrically.
+
+If long and short quality differ, reflect that directly in the script.
+
+```pypscript
+patterns {
+    trend_up and long_momentum and long_trigger -> UP(confidence: 0.80)
+    trend_down and short_momentum and short_trigger -> DOWN(confidence: 0.90)
+    default -> HOLD(confidence: 0.96)
+}
+```
+
+That is not inconsistency.
+
+That is honesty.
+
+## 4. Confidence Ladders
+
+Instead of one giant “all-or-nothing” rule, use a confidence ladder.
+
+```pypscript
+patterns {
+    trend_up and momentum_up and breakout and volatility_ok -> UP(confidence: 0.90)
+    trend_up and momentum_up and breakout -> UP(confidence: 0.82)
+    trend_up and breakout -> UP(confidence: 0.72)
+    default -> HOLD(confidence: 0.96)
+}
+```
+
+This works well when:
+
+- you want the same directional idea
+- but with different levels of confirmation
+
+## 5. Explicit Weak-Zone Holds
+
+Advanced scripts are often better because they are better at refusing bad states.
+
+```pypscript
+momentum_mid = between(rsi_value, 45, 55)
+
+patterns {
+    momentum_mid -> HOLD(confidence: 0.97)
+    trend_up and breakout -> UP(confidence: 0.82)
+    trend_down and breakdown -> DOWN(confidence: 0.82)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+That can be more powerful than adding another aggressive entry rule.
+
+## 6. Compose Conditions, Do Not Repeat Them
+
+Advanced scripts stay readable by building reusable components.
+
+```pypscript
+trend_up = above(fast_ma, slow_ma)
+trend_down = below(fast_ma, slow_ma)
+volatility_ok = above(atr_value, 0.0)
+long_context = trend_up and volatility_ok
+short_context = trend_down and volatility_ok
+
+patterns {
+    long_context and long_trigger -> UP(confidence: 0.84)
+    short_context and short_trigger -> DOWN(confidence: 0.84)
+    default -> HOLD(confidence: 0.96)
+}
+```
+
+## 7. Use Thresholds Intentionally
+
+Thresholds should mean something.
+
+Weak:
+
+```pypscript
+above(rsi_value, 51)
+```
+
+unless you know exactly why `51` matters.
+
+Better:
+
+```pypscript
+above(rsi_value, 55)
+below(rsi_value, 45)
+between(rsi_value, 45, 55)
+```
+
+Those values clearly define bullish, bearish, and neutral zones.
+
+## 8. Advanced Example
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import indicators.rsi
+import indicators.atr
+import functions.above
+import functions.below
+import functions.between
+import functions.cross
+
+strategy "advanced_regime_breakout" {
+    fast_ma = sma.evaluate(close, 20)
+    slow_ma = sma.evaluate(close, 50)
+    rsi_value = rsi.evaluate(close, 14)
+    atr_value = atr.evaluate(high, low, close, 14)
+
+    trend_up = above(fast_ma, slow_ma)
+    trend_down = below(fast_ma, slow_ma)
+    long_momentum = above(rsi_value, 58)
+    short_momentum = below(rsi_value, 42)
+    neutral_momentum = between(rsi_value, 45, 55)
+    volatility_ok = above(atr_value, 0.0)
+    breakout_long = cross(close, fast_ma)
+    breakout_short = cross(fast_ma, close)
+
+    long_context = trend_up and long_momentum and volatility_ok
+    short_context = trend_down and short_momentum and volatility_ok
+
+    patterns {
+        neutral_momentum -> HOLD(confidence: 0.98)
+        long_context and breakout_long -> UP(confidence: 0.88)
+        short_context and breakout_short -> DOWN(confidence: 0.90)
+        trend_up and breakout_long -> UP(confidence: 0.74)
+        trend_down and breakout_short -> DOWN(confidence: 0.78)
+        default -> HOLD(confidence: 0.96)
+    }
+}
+```
+
+## What “Advanced” Should Mean
+
+Advanced should mean:
+
+- clearer logic under more complex market conditions
+- better selectivity
+- more truthful confidence
+
+It should not mean:
+
+- unreadable one-liners
+- five indicators repeated everywhere
+- patterns nobody can explain
+
+## Related Pages
+
+- [Pattern Matching](./patterns)
+- [Best Practices](./best-practices)
+- [Troubleshooting](./troubleshooting)

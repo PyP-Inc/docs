@@ -1,0 +1,399 @@
+# PyPScript Syntax Reference
+
+This is the language reference for writing valid `.ppc` files.
+
+It focuses on the practical syntax you actually use day to day.
+
+## Canonical File Shape
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import functions.cross
+
+strategy "example_name" {
+    fast_ma = sma.evaluate(close, 10)
+    slow_ma = sma.evaluate(close, 20)
+
+    patterns {
+        cross(fast_ma, slow_ma) -> UP(confidence: 0.80)
+        default -> HOLD(confidence: 0.95)
+    }
+}
+
+meta {
+    author: "PyP"
+    version: "1.0.0"
+    description: "Example strategy"
+}
+
+config {
+    pairs: ["EURUSD"]
+    timeframes: ["1m"]
+}
+```
+
+## Top-Level Blocks
+
+PyPScript files are made of top-level blocks and statements:
+
+- version header
+- engine declaration
+- imports
+- one strategy block
+- one meta block
+- optional config block
+
+Keep that order stable. It makes scripts easier to read and easier to validate.
+
+## Header And Engine
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+```
+
+Both lines belong at the top of the file.
+
+## Imports
+
+Imports are simple:
+
+```pypscript
+import indicators.sma
+import indicators.rsi
+import functions.above
+import functions.below
+import functions.cross
+```
+
+Rules:
+
+- each import is one line
+- import before the strategy block
+- do not import the same module twice
+- if you use a function or indicator, import it explicitly
+
+## Strategy Declaration
+
+```pypscript
+strategy "trend_following" {
+    // body
+}
+```
+
+The strategy name is a string.
+
+Inside the strategy body you typically declare:
+
+- indicator values
+- reusable boolean conditions
+- the `patterns` block
+
+## Assignments
+
+Assignments use the standard form:
+
+```pypscript
+name = expression
+```
+
+Examples:
+
+```pypscript
+fast_ma = sma.evaluate(close, 10)
+momentum = rsi.evaluate(close, 14)
+trend_up = above(close, fast_ma)
+```
+
+Names should be lowercase with underscores:
+
+```pypscript
+fast_ma
+slow_ma
+trend_up
+entry_signal
+```
+
+Avoid:
+
+```pypscript
+FastMA
+10ma
+trend-up
+```
+
+## Expressions
+
+Common expressions in PyPScript:
+
+- indicator calls
+- function calls
+- boolean combinations
+- literal numbers and strings
+
+Examples:
+
+```pypscript
+sma.evaluate(close, 20)
+atr.evaluate(high, low, close, 14)
+above(close, trend_ma)
+below(momentum, 30)
+cross(fast_ma, slow_ma)
+above(close, trend_ma) and above(momentum, 55)
+```
+
+## Logical Operators
+
+PyPScript uses lowercase logical operators:
+
+- `and`
+- `or`
+- `not`
+
+Example:
+
+```pypscript
+trend_up and momentum_up
+trend_up or breakout
+not overbought
+```
+
+Use parentheses whenever a condition becomes hard to scan:
+
+```pypscript
+(trend_up and momentum_up) or breakout
+```
+
+## Patterns Block
+
+The `patterns` block maps conditions to signals.
+
+```pypscript
+patterns {
+    condition_a -> UP(confidence: 0.80)
+    condition_b -> DOWN(confidence: 0.78)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+Rules:
+
+- patterns are evaluated top to bottom
+- first match wins
+- `default` should be last
+- every signal must include a confidence value
+
+## Signals
+
+Valid signal directions:
+
+- `UP`
+- `DOWN`
+- `HOLD`
+
+Signal form:
+
+```pypscript
+UP(confidence: 0.82)
+DOWN(confidence: 0.77)
+HOLD(confidence: 0.95)
+```
+
+Confidence should be a decimal between `0.0` and `1.0`.
+
+## Meta Block
+
+```pypscript
+meta {
+    author: "Stanley Isaac"
+    version: "1.2.0"
+    description: "Trend continuation strategy"
+}
+```
+
+Treat this as the human-facing description of the script.
+
+Good meta values are:
+
+- specific
+- versioned
+- readable
+
+## Config Block
+
+```pypscript
+config {
+    pairs: ["EURUSD", "GBPUSD"]
+    timeframes: ["1m", "5m"]
+}
+```
+
+Common config values:
+
+- `pairs`
+- `timeframes`
+
+Keep config explicit. If a script is only intended for one pair and one timeframe, say so.
+
+## Built-In Data Series
+
+Available without import:
+
+- `open`
+- `high`
+- `low`
+- `close`
+- `volume`
+- `pair`
+- `timeframe`
+
+Example:
+
+```pypscript
+range_size = atr.evaluate(high, low, close, 14)
+trend_ma = sma.evaluate(close, 50)
+```
+
+## Literals
+
+Numbers:
+
+```pypscript
+10
+20
+0.80
+0.95
+```
+
+Strings:
+
+```pypscript
+"EURUSD"
+"1m"
+"trend_pullback"
+```
+
+Lists:
+
+```pypscript
+["EURUSD", "GBPUSD"]
+["1m", "5m"]
+```
+
+## Comments
+
+Use `//` comments.
+
+```pypscript
+// Fast trend filter
+trend_ma = sma.evaluate(close, 50)
+```
+
+Keep comments focused on intent, not obvious syntax.
+
+Good:
+
+```pypscript
+// Only allow longs when the broader trend is already positive
+trend_up = above(close, trend_ma)
+```
+
+Weak:
+
+```pypscript
+// Assigns SMA to variable
+trend_ma = sma.evaluate(close, 50)
+```
+
+## Pattern Order Matters
+
+This is valid but wrong:
+
+```pypscript
+patterns {
+    above(momentum, 50) -> UP(confidence: 0.60)
+    above(momentum, 80) -> UP(confidence: 0.90)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+Why it is wrong:
+
+- the first rule already catches all values above `80`
+- the second rule is never reached
+
+Better:
+
+```pypscript
+patterns {
+    above(momentum, 80) -> UP(confidence: 0.90)
+    above(momentum, 50) -> UP(confidence: 0.60)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## A Realistic Syntax Example
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import indicators.rsi
+import indicators.atr
+import functions.above
+import functions.below
+import functions.cross
+
+strategy "structured_example" {
+    fast_ma = sma.evaluate(close, 20)
+    slow_ma = sma.evaluate(close, 50)
+    rsi_value = rsi.evaluate(close, 14)
+    atr_value = atr.evaluate(high, low, close, 14)
+
+    trend_up = above(fast_ma, slow_ma)
+    trend_down = below(fast_ma, slow_ma)
+    momentum_up = above(rsi_value, 55)
+    momentum_down = below(rsi_value, 45)
+    volatility_ok = above(atr_value, 0.0)
+
+    patterns {
+        trend_up and momentum_up and cross(close, fast_ma) and volatility_ok -> UP(confidence: 0.84)
+        trend_down and momentum_down and cross(fast_ma, close) and volatility_ok -> DOWN(confidence: 0.84)
+        default -> HOLD(confidence: 0.96)
+    }
+}
+
+meta {
+    author: "PyP"
+    version: "1.0.0"
+    description: "Structured trend and momentum example"
+}
+
+config {
+    pairs: ["EURUSD"]
+    timeframes: ["5m"]
+}
+```
+
+## Syntax Checklist
+
+Before saving a script, verify:
+
+- header is present
+- engine line is present
+- every used function or indicator is imported
+- strategy block exists
+- `patterns` block exists
+- `default -> HOLD(...)` exists
+- confidence values are between `0.0` and `1.0`
+- meta block is present
+
+## Related Pages
+
+- [Basics](./basics)
+- [Variables & Data](./variables)
+- [Pattern Matching](./patterns)

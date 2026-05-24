@@ -1,0 +1,80 @@
+# Artifacts and Model Formats
+
+Artifacts are the contract surface that quant deployments actually run.
+
+A quant job is useful because it produces an artifact. A release matters because it points to a specific artifact. A deployment is meaningful because it runs that artifact under controlled runtime settings.
+
+## Artifact targets
+
+PyP currently centers quant around a small set of artifact targets:
+
+### `python_bundle`
+
+Best for:
+
+- custom Python logic
+- lightweight deterministic models
+- simple numpy-driven parameter bundles
+
+Typical behavior:
+
+- `artifact.json` contains strategy code, config, metrics, and model payload
+- live runtime can execute it directly in the Python worker path
+
+### `joblib`
+
+Best for:
+
+- exact scikit-learn style artifact preservation
+- classical tabular model workflows
+
+Typical behavior:
+
+- `artifact.json` stores metadata
+- a real `model.joblib` is stored separately
+- exact runtime support depends on the runtime family implementation
+
+### `onnx`
+
+Best for:
+
+- exact preserved model files
+- framework export paths that target a portable runtime format
+
+Typical behavior:
+
+- `artifact.json` stores metadata and model URI
+- a real `model.onnx` is stored separately
+- heavier runtime paths may use container-backed execution
+
+## Why artifacts matter
+
+Artifacts solve three different problems at once:
+
+- deployment reproducibility
+- release versioning
+- simulation integrity
+
+Without an artifact, "the model" is just a vague training result. With an artifact, PyP can treat the output as an actual deployable unit.
+
+## Artifact metadata
+
+A healthy quant artifact should carry:
+
+- artifact format
+- runtime type
+- artifact target
+- metrics
+- config
+- model storage mode
+- created time
+
+That metadata is what lets the router, release flow, and deployment pipeline understand what they are dealing with.
+
+## Best practice
+
+- choose the simplest target that preserves what you need
+- use `python_bundle` when lightweight custom logic is enough
+- use `joblib` when exact sklearn-style preservation matters
+- use `onnx` when the exact model file must remain portable and intact
+

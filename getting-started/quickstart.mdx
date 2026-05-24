@@ -1,0 +1,340 @@
+# Getting Started with PyPScript
+
+**Your first trading strategy in 10 minutes**
+
+This guide will walk you through creating, understanding, and deploying your first PyPScript trading strategy. No prior programming experience required.
+
+## What You'll Build
+
+A simple moving average crossover strategy that:
+- Buys when fast MA crosses above slow MA
+- Sells when fast MA crosses below slow MA
+- Uses RSI for confirmation
+
+## Prerequisites
+
+- Access to PyP Dashboard ([pyp.stanlink.online](https://pyp.stanlink.online))
+- Basic understanding of trading concepts (moving averages, RSI)
+- 10 minutes of your time
+
+## Step 1: Create a New Project
+
+1. **Login to PyP Dashboard**
+   - Navigate to [pyp.stanlink.online](https://pyp.stanlink.online)
+   - Sign in with your account
+
+2. **Create New Project**
+   - Click "New Project"
+   - Name: "My First Strategy"
+   - Description: "Learning PyPScript basics"
+   - Click "Create"
+
+3. **Open the Editor**
+   - Click on your new project
+   - Navigate to "Editor" tab
+   - You'll see a blank `.ppc` file
+
+## Step 2: Write Your First Strategy
+
+Copy and paste this code into the editor:
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+// Import the indicators and functions we need
+import indicators.sma
+import indicators.rsi
+import functions.cross
+import functions.above
+import functions.below
+
+// Define our strategy
+strategy "ma_crossover_rsi" {
+    // Calculate moving averages
+    fast_ma = sma.evaluate(close, 10)
+    slow_ma = sma.evaluate(close, 20)
+    
+    // Calculate RSI for confirmation
+    momentum = rsi.evaluate(close, 14)
+    
+    // Define our trading patterns
+    patterns {
+        // Buy when fast MA crosses above slow MA and RSI > 50
+        cross(fast_ma, slow_ma) and above(momentum, 50) -> UP(confidence: 0.80)
+        
+        // Sell when fast MA crosses below slow MA and RSI < 50
+        cross(slow_ma, fast_ma) and below(momentum, 50) -> DOWN(confidence: 0.80)
+        
+        // Hold in all other cases
+        default -> HOLD(confidence: 0.95)
+    }
+}
+
+// Required metadata
+meta {
+    author: "Your Name"
+    version: "1.0"
+    description: "Simple MA crossover with RSI confirmation"
+    tags: ["moving-average", "rsi", "crossover", "beginner"]
+}
+
+// Optional configuration
+config {
+    timeframes: ["1h", "4h"]
+    pairs: ["EURUSD", "GBPUSD", "BTCUSDT"]
+    lookback_period: 100
+    optimization: "accuracy"
+}
+```
+
+## Step 3: Understand the Code
+
+Let's break down each section:
+
+### Header
+```ppc
+#!pyp/1.0
+engine: pyp-1.0
+```
+- Specifies PyPScript version 1.0
+- Required at the top of every file
+
+### Imports
+```ppc
+import indicators.sma
+import indicators.rsi
+import functions.cross
+```
+- Import the technical indicators and functions you'll use
+- Only import what you need for better performance
+
+### Strategy Block
+```ppc
+strategy "ma_crossover_rsi" {
+    // Your strategy logic goes here
+}
+```
+- Contains all your trading logic
+- Strategy name must be unique
+
+### Indicator Calculations
+```ppc
+fast_ma = sma.evaluate(close, 10)
+slow_ma = sma.evaluate(close, 20)
+momentum = rsi.evaluate(close, 14)
+```
+- Calculate technical indicators
+- `close` is the closing price (built-in variable)
+- Numbers are the indicator parameters (periods)
+
+### Pattern Matching
+```ppc
+patterns {
+    cross(fast_ma, slow_ma) and above(momentum, 50) -> UP(confidence: 0.80)
+    default -> HOLD(confidence: 0.95)
+}
+```
+- Define when to buy, sell, or hold
+- Each pattern has a confidence level (0.0 to 1.0)
+- `default` catches all other cases
+
+### Metadata
+```ppc
+meta {
+    author: "Your Name"
+    version: "1.0"
+    description: "Strategy description"
+}
+```
+- Required information about your strategy
+- Used in the marketplace and for tracking
+
+### Configuration
+```ppc
+config {
+    timeframes: ["1h", "4h"]
+    pairs: ["EURUSD", "BTCUSDT"]
+}
+```
+- Optional settings for training and deployment
+- Specifies which markets and timeframes to use
+
+## Step 4: Validate Your Code
+
+1. **Save the File**
+   - Press `Ctrl+S` (Windows) or `Cmd+S` (Mac)
+   - Or click the "Save" button
+
+2. **Validate Syntax**
+   - Click "Validate" button
+   - Check the console panel for any errors
+   - Green checkmark means success!
+
+3. **Common Errors and Fixes**
+   ```
+   Error: Missing import for 'cross'
+   Fix: Add 'import functions.cross'
+   
+   Error: Invalid confidence value
+   Fix: Use values between 0.0 and 1.0
+   
+   Error: Missing default pattern
+   Fix: Add 'default -> HOLD(confidence: 0.95)'
+   ```
+
+## Step 5: Train Your Strategy
+
+1. **Navigate to Training**
+   - Click "Training" tab in your project
+   - Click "New Training Run"
+
+2. **Configure Training**
+   - **Pairs**: Select "EURUSD" and "BTCUSDT"
+   - **Timeframes**: Select "1h"
+   - **Date Range**: Last 3 months
+   - **Sample Size**: 50,000 samples
+
+3. **Start Training**
+   - Review your settings
+   - Click "Start Training"
+   - Watch the live progress
+
+4. **Training Process**
+   ```
+   [1/4] Loading market data... ✓
+   [2/4] Computing indicators... ✓
+   [3/4] Generating training samples... ✓
+   [4/4] Optimizing strategy parameters... ✓
+   
+   Training complete! Accuracy: 67.3%
+   ```
+
+## Step 6: Test in Paper Trading
+
+1. **Navigate to Simulation**
+   - Click "Simulation" tab
+   - Click "New Simulation"
+
+2. **Configure Simulation**
+   - **Strategy Version**: Select your trained version
+   - **Pairs**: EURUSD
+   - **Timeframe**: 1h
+   - **Initial Balance**: $10,000
+   - **Risk per Trade**: 2%
+
+3. **Run Simulation**
+   - Click "Start Simulation"
+   - Watch live trades in the chart
+   - Monitor portfolio performance
+
+4. **Simulation Results**
+   ```
+   Portfolio Balance: $10,450
+   Total Trades: 23
+   Win Rate: 65.2%
+   Max Drawdown: -3.2%
+   Sharpe Ratio: 1.8
+   ```
+
+## Step 7: Deploy for Live Signals
+
+1. **Navigate to Deployment**
+   - Click "Deploy" tab
+   - Select your trained strategy
+
+2. **Choose Delivery Channels**
+   - ✓ Telegram Bot
+   - ✓ Discord Webhook
+   - ✓ Email Notifications
+   - ✓ Dashboard Alerts
+
+3. **Deploy Strategy**
+   - Click "Deploy to Production"
+   - Your strategy is now live!
+
+## Understanding the Results
+
+### What Just Happened?
+
+1. **You wrote declarative code** - Described what you want, not how to do it
+2. **AI optimized parameters** - Found the best indicator settings automatically
+3. **AI compilation** - Your strategy became a highly optimized AI model
+4. **Fast prediction** - Brain Worker uses the trained model for real-time predictions
+
+### Why This Works
+
+```
+Traditional Approach:
+Code → Rules → If/Then Logic → Decision
+
+PyPScript Approach:
+Intent → AI Training → AI Model → Prediction Engine → Decision
+```
+
+The AI found patterns in historical data that match your intent, then encoded them into a model for ultra-fast prediction.
+
+## Next Steps
+
+### Improve Your Strategy
+1. **Add more indicators** - Try MACD, Bollinger Bands, or Fractals
+2. **Multi-timeframe analysis** - Combine 1h and 4h signals
+3. **Risk management** - Add stop-loss and take-profit patterns
+
+### Learn Advanced Features
+1. **[Pattern Matching Guide](../pypscript/patterns)** - Complex conditions
+2. **[Strategy Validation](../pypscript/validation)** - Validation methods
+3. **[Running Training](../training/running)** - Optimization techniques
+
+### Join the Community
+1. **[Discord Server](https://discord.gg/3WrTKvvkF3)** - Get help and share strategies
+2. **[Telegram Group](https://t.me/+OGkJDpEEi88zNzQ8)** - Latest updates and announcements
+
+## Common Questions
+
+### Q: Do I need programming experience?
+**A:** No! PyPScript is designed for traders, not programmers. If you understand moving averages and RSI, you can write strategies.
+
+### Q: How accurate are the predictions?
+**A:** Accuracy varies by strategy and market conditions. Good strategies achieve 55-70% accuracy with proper risk management.
+
+### Q: Can I use custom indicators?
+**A:** Currently, we support built-in indicators. Custom indicators are coming in future updates.
+
+### Q: Is my strategy code private?
+**A:** Yes! Your strategies are private by default. You can choose to share them in the marketplace for monetization.
+
+### Q: What markets are supported?
+**A:** Forex (all major pairs), Crypto (Bitcoin, Ethereum, major altcoins), with Commodities and Indices coming soon.
+
+## Troubleshooting
+
+### Strategy Won't Validate
+- Check all imports are correct
+- Ensure confidence values are between 0.0 and 1.0
+- Make sure you have a `default` pattern
+- Verify all parentheses are balanced
+
+### Training Fails
+- Reduce sample size if timeout occurs
+- Check date range has sufficient data
+- Ensure selected pairs have data for the timeframe
+- Try simpler strategies first
+
+### Poor Performance
+- Add more confirmation indicators
+- Increase confidence thresholds
+- Test on different timeframes
+- Consider market conditions during training period
+
+## Success Tips
+
+1. **Start Simple** - Master basic patterns before adding complexity
+2. **Test Thoroughly** - Always paper trade before going live
+3. **Understand Markets** - PyPScript amplifies your trading knowledge
+4. **Iterate Quickly** - Try many variations to find what works
+5. **Join Community** - Learn from other successful strategy developers
+
+---
+
+**Congratulations!** You've created, trained, and deployed your first PyPScript strategy. You're now ready to explore more advanced features and build profitable trading systems.

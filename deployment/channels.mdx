@@ -1,0 +1,109 @@
+# Channel Routing
+
+PyP deployments can fan out one strategy runtime to multiple destinations at the same time.
+
+This means one live session can:
+
+- send alerts to Telegram
+- post to Discord
+- deliver to WhatsApp
+- appear in the web dashboard
+- forward to MT4 or MT5 for execution
+
+## Channel Categories
+
+### Notification Channels
+
+Use notification channels when people need to receive or follow signals:
+
+- Telegram
+- Discord
+- WhatsApp
+- Web
+
+These are best for:
+
+- private subscriber alerts
+- community channels
+- manual execution workflows
+- monitoring a strategy before broker execution
+
+### Execution Channels
+
+Use execution channels when the strategy should reach a trading terminal:
+
+- MT4
+- MT5
+
+These are best for:
+
+- automated terminal execution
+- broker-connected deployments
+- live terminal routing with runtime controls
+
+## How Routing Works
+
+The deployment owns the routing configuration.
+
+That configuration usually includes:
+
+- selected channels
+- execution mode
+- pair
+- timeframe
+- confidence threshold
+- risk controls
+
+The strategy decides when a signal exists. The deployment decides where that signal goes.
+
+## Common Routing Patterns
+
+### Alerts Only
+
+Use this when you want signal delivery without terminal execution.
+
+Typical setup:
+
+- Telegram
+- Discord
+- WhatsApp
+- Web
+
+### Execute Only
+
+Use this when signals should go straight to MT4 or MT5.
+
+Typical setup:
+
+- MT4
+- MT5
+
+### Alerts and Execute
+
+Use this when you want both visibility and execution.
+
+Typical setup:
+
+- Telegram plus MT5
+- Discord plus MT4
+- Web plus MT5
+
+## Choosing Channels
+
+Use Telegram or Discord when:
+
+- you run a signal community
+- you want subscribers to see signals immediately
+- you want a lighter operational setup
+
+Use MT4 or MT5 when:
+
+- you want terminal-side execution
+- you need broker routing
+- you want deployment settings like lot sizing and stop loss to matter in execution
+
+Use multiple channels when:
+
+- you want alerts for visibility and terminals for execution
+- you need redundancy across delivery surfaces
+- you want a subscriber strategy to reach both humans and terminals

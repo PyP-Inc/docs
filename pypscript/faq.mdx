@@ -1,0 +1,210 @@
+# PyPScript FAQ
+
+## What Is PyPScript?
+
+PyPScript is PyP’s strategy language.
+
+It is designed for expressing market logic clearly:
+
+- indicator calculations
+- condition definitions
+- signal rules
+
+You write a `.ppc` file to describe when a strategy should emit `UP`, `DOWN`, or `HOLD`.
+
+## Is PyPScript A General-Purpose Language?
+
+No.
+
+It is intentionally narrow.
+
+You do not use it for:
+
+- networking
+- broker APIs
+- loops and classes
+- arbitrary application logic
+
+You use it to define trading logic cleanly.
+
+## Do I Need To Be A Programmer?
+
+Not necessarily.
+
+If you understand concepts like:
+
+- moving averages
+- RSI
+- crossovers
+- trend filters
+
+you can usually learn PyPScript quickly.
+
+The hardest part is usually not syntax. It is being precise about your trading idea.
+
+## What Does A `.ppc` File Contain?
+
+A normal file contains:
+
+- header
+- engine line
+- imports
+- strategy block
+- meta block
+- optional config block
+
+## What Signals Can A Strategy Emit?
+
+- `UP`
+- `DOWN`
+- `HOLD`
+
+And each signal must include confidence:
+
+```pypscript
+UP(confidence: 0.82)
+DOWN(confidence: 0.79)
+HOLD(confidence: 0.95)
+```
+
+## Is `HOLD` Required?
+
+In practice, yes.
+
+Every strategy should finish with:
+
+```pypscript
+default -> HOLD(confidence: 0.95)
+```
+
+That makes the no-trade state explicit.
+
+## Are There Built-In Price Variables?
+
+Yes.
+
+You can use these directly:
+
+- `open`
+- `high`
+- `low`
+- `close`
+- `volume`
+- `pair`
+- `timeframe`
+
+## Do I Have To Import Everything?
+
+You do not need to import the built-in price variables.
+
+You do need to import the indicators and helper functions you use.
+
+Example:
+
+```pypscript
+import indicators.sma
+import indicators.rsi
+import functions.above
+import functions.cross
+```
+
+## Should I Write Giant One-Liners?
+
+No.
+
+PyPScript gets much better when you name intermediate conditions.
+
+Better:
+
+```pypscript
+trend_up = above(close, trend_ma)
+momentum_up = above(rsi_value, 55)
+entry_trigger = cross(close, entry_ma)
+```
+
+Then use those in `patterns`.
+
+## Can I Support More Than One Pair?
+
+Yes.
+
+Use the config block:
+
+```pypscript
+config {
+    pairs: ["EURUSD", "GBPUSD"]
+}
+```
+
+But only do that when the strategy genuinely fits both markets.
+
+## Can I Support More Than One Timeframe?
+
+Yes.
+
+```pypscript
+config {
+    timeframes: ["5m", "15m"]
+}
+```
+
+Again, only do this when the strategy idea remains coherent across those timeframes.
+
+## What Is The Most Common Beginner Mistake?
+
+Usually one of these:
+
+- missing imports
+- missing `default -> HOLD(...)`
+- putting weak patterns above strong ones
+- trying to write everything in one giant expression
+- making a strategy far too broad or far too restrictive
+
+## What Is The Best First Strategy To Write?
+
+Something simple and explainable, such as:
+
+- moving average crossover with momentum confirmation
+- trend pullback with RSI filter
+- breakout with volatility gate
+
+The key is not novelty.
+
+The key is clarity.
+
+## How Detailed Should Meta Be?
+
+Detailed enough that another person can understand:
+
+- what the strategy is
+- what market behavior it targets
+- what version they are looking at
+
+Good:
+
+```pypscript
+meta {
+    author: "PyP"
+    version: "1.2.0"
+    description: "Trend pullback strategy for intraday FX momentum"
+}
+```
+
+## Is PyPScript Private By Default?
+
+Your strategy code should be treated as product logic, not something casually exposed. PyP surfaces the strategy through the platform and marketplace flows, not by giving buyers raw internal assets by default.
+
+## Where Should I Look Next?
+
+If you are new:
+
+- [Basics](./basics)
+- [Syntax Reference](./syntax)
+- [Variables & Data](./variables)
+- [Pattern Matching](./patterns)
+
+If you already write scripts:
+
+- [Advanced Techniques](./advanced)
+- [Best Practices](./best-practices)
+- [Troubleshooting](./troubleshooting)

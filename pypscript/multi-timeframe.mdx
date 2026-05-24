@@ -1,0 +1,197 @@
+# Multi-Timeframe Strategy Design
+
+Multi-timeframe PyPScript means one script can be scoped to more than one timeframe in its config.
+
+That does not mean the script should become vague.
+
+Good multi-timeframe scripts keep their logic readable and their assumptions explicit.
+
+## Start With Config
+
+The simplest form is:
+
+```pypscript
+config {
+    pairs: ["EURUSD"]
+    timeframes: ["1m", "5m", "15m"]
+}
+```
+
+This tells PyP which timeframes the script is intended for.
+
+## When Multi-Timeframe Makes Sense
+
+Use more than one timeframe when the same idea is valid across nearby regimes.
+
+Examples:
+
+- a momentum script that works on `1m` and `5m`
+- a trend-following script that works on `15m` and `1h`
+- a swing structure script that works on `1h` and `4h`
+
+It makes less sense when:
+
+- the script is highly tuned to one very specific rhythm
+- the stop/target logic depends on one market speed only
+- the same indicator window means very different things across the listed timeframes
+
+## Keep The Strategy Timeframe-Aware In Naming
+
+If a script is multi-timeframe, write it in a way that survives that broader scope.
+
+Weak:
+
+```pypscript
+config {
+    timeframes: ["1m", "1h"]
+}
+```
+
+with a script that was clearly invented only for `1m`.
+
+Better:
+
+```pypscript
+config {
+    timeframes: ["5m", "15m"]
+}
+```
+
+for a momentum or trend script whose logic is still recognizable in both.
+
+## Parameter Discipline
+
+The biggest multi-timeframe mistake is using windows that are only sensible on one timeframe.
+
+For example:
+
+```pypscript
+fast_ma = sma.evaluate(close, 3)
+slow_ma = sma.evaluate(close, 5)
+```
+
+That may be a very noisy scalp construct.
+
+If you then list `1h` in config as well, the script is no longer clearly designed.
+
+Prefer windows that still mean something across the selected set:
+
+```pypscript
+fast_ma = sma.evaluate(close, 20)
+slow_ma = sma.evaluate(close, 50)
+momentum = rsi.evaluate(close, 14)
+```
+
+## Build Around Market Structure, Not Tiny Timing Artifacts
+
+Multi-timeframe logic survives better when it expresses concepts like:
+
+- trend alignment
+- pullback quality
+- momentum confirmation
+- volatility filter
+
+Example:
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import indicators.rsi
+import indicators.atr
+import functions.above
+import functions.below
+import functions.cross
+
+strategy "multi_timeframe_trend_pullback" {
+    fast_ma = sma.evaluate(close, 20)
+    slow_ma = sma.evaluate(close, 50)
+    rsi_value = rsi.evaluate(close, 14)
+    atr_value = atr.evaluate(high, low, close, 14)
+
+    trend_up = above(fast_ma, slow_ma)
+    trend_down = below(fast_ma, slow_ma)
+    long_momentum = above(rsi_value, 55)
+    short_momentum = below(rsi_value, 45)
+    volatility_ok = above(atr_value, 0.0)
+    long_trigger = cross(close, fast_ma)
+    short_trigger = cross(fast_ma, close)
+
+    patterns {
+        trend_up and long_momentum and long_trigger and volatility_ok -> UP(confidence: 0.84)
+        trend_down and short_momentum and short_trigger and volatility_ok -> DOWN(confidence: 0.84)
+        default -> HOLD(confidence: 0.96)
+    }
+}
+
+meta {
+    author: "PyP"
+    version: "1.0.0"
+    description: "Trend pullback logic intended for intraday momentum regimes"
+}
+
+config {
+    pairs: ["EURUSD"]
+    timeframes: ["5m", "15m"]
+}
+```
+
+## Good Multi-Timeframe Pairings
+
+These pairings are usually more coherent than extreme jumps:
+
+- `1m` and `5m`
+- `5m` and `15m`
+- `15m` and `1h`
+- `1h` and `4h`
+
+These are harder to justify in one script:
+
+- `1m` and `1d`
+- `5m` and `4h`
+
+You can still do it, but the script should have a strong reason for spanning that gap.
+
+## Choose One Primary Use Case
+
+Even in a multi-timeframe script, there should still be one primary market behavior:
+
+- trend continuation
+- pullback entry
+- breakout
+- mean reversion
+
+Do not try to make one file be:
+
+- a scalp script on `1m`
+- a swing script on `4h`
+- a reversal script on `1d`
+
+That usually turns into vague logic and bad explanations.
+
+## Signs Your Multi-Timeframe Scope Is Too Broad
+
+- the same confidence values no longer make intuitive sense across all timeframes
+- one timeframe generates far too many candidate setups and another generates almost none
+- your comments keep saying “on lower timeframes” or “on higher timeframes” without the logic reflecting that clearly
+- you cannot explain why each listed timeframe belongs in the same script
+
+## Practical Rule
+
+If you can describe the script in one sentence and that sentence still sounds true across every listed timeframe, the scope is probably fine.
+
+If not, split it into separate scripts.
+
+## Multi-Timeframe Checklist
+
+- keep timeframes close enough to share the same market idea
+- use indicator windows that stay meaningful across the listed set
+- avoid overfitting to one timeframe while claiming many
+- write comments that explain the market structure, not just the indicator names
+
+## Related Pages
+
+- [Basics](./basics)
+- [Best Practices](./best-practices)
+- [Troubleshooting](./troubleshooting)

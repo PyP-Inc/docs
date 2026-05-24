@@ -1,0 +1,248 @@
+# Validation
+
+PyPScript validation checks whether your `.ppc` file is structurally sound and internally consistent.
+
+Validation is not about whether the strategy is good.
+
+It is about whether the script is well-formed enough to be trusted as a language document.
+
+## Required Structure
+
+Your file should include:
+
+1. header
+2. engine line
+3. imports for used modules
+4. one `strategy` block
+5. one `patterns` block
+6. one `default -> HOLD(...)` rule
+7. one `meta` block
+
+Minimal valid example:
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import functions.cross
+
+strategy "valid_minimum" {
+    fast_ma = sma.evaluate(close, 10)
+    slow_ma = sma.evaluate(close, 20)
+
+    patterns {
+        cross(fast_ma, slow_ma) -> UP(confidence: 0.80)
+        default -> HOLD(confidence: 0.95)
+    }
+}
+
+meta {
+    author: "PyP"
+    version: "1.0.0"
+    description: "Minimal valid strategy"
+}
+```
+
+## Common Validation Failures
+
+## Missing Header
+
+Wrong:
+
+```pypscript
+engine: pyp-1.0
+```
+
+Fix:
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+```
+
+## Missing Engine
+
+Wrong:
+
+```pypscript
+#!pyp/1.0
+```
+
+Fix:
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+```
+
+## Missing Import
+
+Wrong:
+
+```pypscript
+strategy "broken" {
+    trend_ma = sma.evaluate(close, 50)
+}
+```
+
+Fix:
+
+```pypscript
+import indicators.sma
+```
+
+## Missing Default Pattern
+
+Wrong:
+
+```pypscript
+patterns {
+    trend_up -> UP(confidence: 0.80)
+}
+```
+
+Fix:
+
+```pypscript
+patterns {
+    trend_up -> UP(confidence: 0.80)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## Undefined Variable
+
+Wrong:
+
+```pypscript
+patterns {
+    trend_up and breakout -> UP(confidence: 0.80)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+if `trend_up` or `breakout` were never defined.
+
+## Invalid Confidence
+
+Wrong:
+
+```pypscript
+UP(confidence: 1.2)
+DOWN(confidence: -0.1)
+```
+
+Confidence should stay in the `0.0` to `1.0` range.
+
+## Logical Validation Matters Too
+
+A script can be syntactically valid and still be logically broken.
+
+Examples:
+
+- unreachable patterns
+- contradictory conditions
+- overly broad first rule
+- no realistic hold state
+
+Example of unreachable logic:
+
+```pypscript
+patterns {
+    above(rsi_value, 50) -> UP(confidence: 0.70)
+    above(rsi_value, 80) -> UP(confidence: 0.92)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+The second rule is valid syntax, but poor logic.
+
+## Validation Checklist
+
+Before you call a script “ready”, check:
+
+- header exists
+- engine line exists
+- every module used is imported
+- variable names are clear and consistent
+- every named condition is defined before use
+- `patterns` block exists
+- strongest rules are above weaker ones
+- `default -> HOLD(...)` exists
+- meta block is present and readable
+- config matches the intended pair and timeframe scope
+
+## Meta And Config Are Part Of Validation Quality
+
+Even if a script parses, weak metadata still makes it harder to trust.
+
+Weak:
+
+```pypscript
+meta {
+    author: "me"
+    version: "1"
+}
+```
+
+Better:
+
+```pypscript
+meta {
+    author: "PyP"
+    version: "1.0.0"
+    description: "Trend continuation with momentum confirmation"
+}
+```
+
+## A Clean Validation Example
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import indicators.rsi
+import functions.above
+import functions.below
+import functions.cross
+
+strategy "validation_example" {
+    fast_ma = sma.evaluate(close, 20)
+    slow_ma = sma.evaluate(close, 50)
+    rsi_value = rsi.evaluate(close, 14)
+
+    trend_up = above(fast_ma, slow_ma)
+    trend_down = below(fast_ma, slow_ma)
+    long_trigger = trend_up and above(rsi_value, 55) and cross(close, fast_ma)
+    short_trigger = trend_down and below(rsi_value, 45) and cross(fast_ma, close)
+
+    patterns {
+        long_trigger -> UP(confidence: 0.84)
+        short_trigger -> DOWN(confidence: 0.84)
+        default -> HOLD(confidence: 0.96)
+    }
+}
+
+meta {
+    author: "PyP"
+    version: "1.0.0"
+    description: "Valid trend and momentum example"
+}
+
+config {
+    pairs: ["EURUSD"]
+    timeframes: ["5m"]
+}
+```
+
+## Validation Goal
+
+A validated script should be:
+
+- parseable
+- readable
+- internally consistent
+
+That is the standard to aim for before anything else.

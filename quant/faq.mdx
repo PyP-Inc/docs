@@ -1,0 +1,67 @@
+# Quant FAQ
+
+## Do I need to learn PyPScript to use Quant Mode?
+
+No. Quant Mode is Python-based.
+
+Use it when you want to define `train()` and `predict()` directly rather than author a `.ppc` strategy file.
+
+## Can I use multiple files in the Research workspace?
+
+Not as a general Python project yet.
+
+The current supported workspace is intentionally constrained to:
+
+- `strategy.py`
+- `quant.config.json`
+- `README.md`
+
+## Does `quant.config.json` really matter?
+
+Yes.
+
+It controls:
+
+- pair
+- timeframe
+- parameters
+- artifact target
+- training requirements
+- inference compatibility declarations
+
+## What data is available for training?
+
+PyP provides market data inside the quant workflow.
+
+The exact training environment should be treated as structured platform data, not as arbitrary user-managed file ingestion.
+
+## Can I use my own dataset?
+
+Custom dataset upload is not the current default path.
+
+Quant Mode today is designed around PyP-provided market data and a controlled training pipeline.
+
+## What should I deploy from?
+
+Deploy from a validated release, not directly from a raw job.
+
+The correct progression is:
+
+- job
+- artifact
+- release
+- simulation
+- deployment or marketplace listing
+
+## Is Quant Mode only for simple models?
+
+No, but the runtime path must stay honest about what it can execute.
+
+Some artifact targets fit lighter runtime paths better than others. Model preservation, runtime cost, and deployment fit should all influence the target you choose.
+
+## Is my source code exposed to subscribers?
+
+No.
+
+Subscribers receive the strategy's signal output and managed delivery behavior, not the underlying source code.
+

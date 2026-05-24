@@ -1,0 +1,71 @@
+# Running Training
+
+Training processes your pypscript strategy on historical data to create a deployable .pyp skill.
+
+## How Training Works
+
+1. Open your project in the editor
+2. Click "Train" button in the toolbar
+3. Configure pairs, timeframes, date range
+4. Wait for training to complete
+
+## Training API
+
+```bash
+POST /api/projects/{projectId}/training-runs
+```
+
+Request body:
+```json
+{
+  "pairs": ["BTCUSDT", "ETHUSDT"],
+  "timeframes": ["1h", "4h"],
+  "startDate": "2024-01-01",
+  "endDate": "2024-12-31",
+  "initialBalance": 10000
+}
+```
+
+## Response
+
+```json
+{
+  "id": "run_abc123",
+  "status": "completed",
+  "createdAt": "2024-01-15T10:30:00Z",
+  "completedAt": "2024-01-15T10:35:00Z",
+  "pypFiles": [
+    "skills/user_123/strategy_1h.pyp",
+    "skills/user_123/strategy_4h.pyp"
+  ]
+}
+```
+
+## Training Statuses
+
+| Status | Meaning |
+|--------|---------|
+| queued | Waiting in queue |
+| running | Currently processing |
+| completed | Successfully finished |
+| failed | Error occurred |
+
+## WebSocket Updates
+
+Training progress is streamed via WebSocket:
+
+```javascript
+{
+  "type": "progress",
+  "progress": 75,
+  "logs": ["Loading data...", "Computing indicators...", "Training model..."]
+}
+```
+
+When complete:
+```javascript
+{
+  "type": "complete",
+  "results": { "pypFiles": [...] }
+}
+```

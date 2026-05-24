@@ -1,0 +1,114 @@
+# `quant.config.json`
+
+`quant.config.json` is the control plane for a quant strategy.
+
+It should contain environment and runtime declarations, not arbitrary narrative or loose notes.
+
+## Typical shape
+
+```json
+{
+  "pair": "BTCUSDT",
+  "timeframe": "1h",
+  "artifact_target": "python_bundle",
+  "parameters": {
+    "lookback": 5
+  },
+  "training_requirements": [
+    "numpy",
+    "pandas",
+    "scikit-learn"
+  ],
+  "inference_requirements": [
+    "numpy"
+  ]
+}
+```
+
+## Core fields
+
+### `pair`
+
+Primary market symbol for the strategy.
+
+Examples:
+
+- `BTCUSDT`
+- `EURUSD`
+- `XAUUSD`
+
+### `timeframe`
+
+Primary candle timeframe.
+
+Examples:
+
+- `1m`
+- `5m`
+- `15m`
+- `1h`
+- `4h`
+- `1d`
+
+### `artifact_target`
+
+Declares the intended artifact class.
+
+Current serious targets are:
+
+- `python_bundle`
+- `joblib`
+- `onnx`
+
+### `parameters`
+
+Free-form strategy parameters used by `train()` and `predict()`.
+
+Examples:
+
+- `lookback`
+- thresholds
+- feature toggles
+- session filters
+
+## Requirements fields
+
+### `training_requirements`
+
+Packages declared for the training environment.
+
+Important behavior:
+
+- default training packages are always installed
+- approved extras are installed after the defaults
+- this is a real mechanism, not just metadata
+
+### `inference_requirements`
+
+Packages declared for live runtime compatibility.
+
+Important behavior:
+
+- this is validated against supported runtime packages
+- unsupported requirements should block deployment
+- this is a compatibility contract, not a promise that workers install arbitrary packages at runtime
+
+## Why requirements live in config
+
+Package declarations belong in config, not in the Python file.
+
+That keeps:
+
+- `strategy.py` as real Python
+- environment declarations explicit
+- training and inference concerns auditable
+
+## Best practice
+
+- keep the config small and explicit
+- use `parameters` for strategy knobs
+- use requirements only when actually needed
+- keep `artifact_target` aligned with the model/runtime plan
+
+If `quant.config.json` becomes vague or overloaded, the deployment story gets vague too.
+

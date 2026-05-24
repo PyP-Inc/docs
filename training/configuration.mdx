@@ -1,0 +1,60 @@
+# Training Configuration
+
+## Configuration Block
+
+```pypscript
+config {
+    timeframes: ["1h", "4h"]
+    pairs: ["BTCUSDT", "ETHUSDT"]
+    lookback_period: 200
+    initialBalance: 10000
+}
+```
+
+## Pairs
+
+### Crypto (Top)
+```
+BTCUSDT, ETHUSDT, BNBUSDT, SOLUSDT, XRPUSDT, ADAUSDT, 
+DOGEUSDT, DOTUSDT, AVAXUSDT, LINKUSDT
+```
+
+### Crypto (Tier 2)
+```
+LTCUSDT, BCHUSDT, UNIUSDT, ATOMUSDT, FILUSDT, VETUSDT, 
+TRXUSDT, ETCUSDT, XLMUSDT, ALGOUSDT
+```
+
+### Forex
+```
+EURUSD, GBPUSD, USDJPY, USDCHF, AUDUSD, USDCAD, NZDUSD, 
+EURGBP, EURJPY, GBPJPY, AUDJPY, EURAUD, EURCHF, GBPCHF
+```
+
+## Timeframes
+
+Valid timeframes:
+- `1m` - 1 minute
+- `5m` - 5 minutes
+- `15m` - 15 minutes
+- `30m` - 30 minutes
+- `1h` - 1 hour
+- `4h` - 4 hours
+- `1d` - 1 day
+- `1w` - 1 week
+
+## Lookback Period
+
+Number of historical candles to use:
+- Higher = more training data, slower
+- Recommended: 100-500
+
+## Initial Balance
+
+Starting balance for backtesting (default: 10000).
+
+## Output
+
+After training, you get:
+- One .pyp file per timeframe
+- Example: `my_strategy_1h.pyp`, `my_strategy_4h.pyp`

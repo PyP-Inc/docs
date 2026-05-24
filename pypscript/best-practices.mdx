@@ -1,0 +1,256 @@
+# PyPScript Best Practices
+
+Good PyPScript is not just valid.
+
+It is:
+
+- easy to read
+- easy to review
+- easy to explain
+- conservative about when it trades
+
+## 1. Start With One Clear Idea
+
+A script should have one main reason for existing.
+
+Examples:
+
+- trend continuation
+- pullback entry
+- momentum breakout
+- mean reversion
+
+Bad scripts often try to be all of them at once.
+
+## 2. Name For Meaning
+
+Prefer:
+
+```pypscript
+trend_up
+momentum_up
+entry_trigger
+volatility_ok
+```
+
+Avoid:
+
+```pypscript
+x1
+cond2
+my_signal
+temp_a
+```
+
+If the variable name cannot be understood without reading the formula, the name is weak.
+
+## 3. Separate Measurements From Decisions
+
+Good structure:
+
+```pypscript
+fast_ma = sma.evaluate(close, 20)
+slow_ma = sma.evaluate(close, 50)
+rsi_value = rsi.evaluate(close, 14)
+
+trend_up = above(fast_ma, slow_ma)
+momentum_up = above(rsi_value, 55)
+entry_trigger = cross(close, fast_ma)
+```
+
+This is easier to maintain than mixing every calculation directly inside the `patterns` block.
+
+## 4. Keep Patterns Short
+
+Good:
+
+```pypscript
+patterns {
+    trend_up and momentum_up and entry_trigger -> UP(confidence: 0.85)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+Weak:
+
+```pypscript
+patterns {
+    above(sma.evaluate(close, 20), sma.evaluate(close, 50)) and above(rsi.evaluate(close, 14), 55) and cross(close, sma.evaluate(close, 20)) -> UP(confidence: 0.85)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## 5. Treat `HOLD` As A Feature
+
+A serious strategy should be comfortable not trading.
+
+Use `HOLD` for:
+
+- neutral momentum
+- contradictory conditions
+- weak structure
+- low-conviction zones
+
+Do not force signals where there is no real edge.
+
+## 6. Put Stronger Rules First
+
+Patterns are order-dependent.
+
+Write them from:
+
+- strongest
+- to weaker
+- to default hold
+
+Example:
+
+```pypscript
+patterns {
+    trend_up and momentum_up and breakout -> UP(confidence: 0.90)
+    trend_up and breakout -> UP(confidence: 0.75)
+    default -> HOLD(confidence: 0.96)
+}
+```
+
+## 7. Use Confidence Honestly
+
+Do not inflate confidence because the pattern looks sophisticated.
+
+A good rule of thumb:
+
+- more filters and cleaner context = higher confidence
+- broader fallback conditions = lower confidence
+- explicit neutral-state hold = very high confidence hold is often fine
+
+## 8. Keep The Script Internally Consistent
+
+If the script name, meta description, and config say one thing, the logic should match.
+
+Example:
+
+If the script is named:
+
+```text
+eurusd_1m_scalper
+```
+
+then the config and logic should not read like a slow swing system.
+
+## 9. Avoid Redundant Calculations
+
+Weak:
+
+```pypscript
+patterns {
+    above(close, sma.evaluate(close, 50)) -> UP(confidence: 0.70)
+    below(close, sma.evaluate(close, 50)) -> DOWN(confidence: 0.70)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+Better:
+
+```pypscript
+trend_ma = sma.evaluate(close, 50)
+
+patterns {
+    above(close, trend_ma) -> UP(confidence: 0.70)
+    below(close, trend_ma) -> DOWN(confidence: 0.70)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## 10. Be Conservative With Multi-Timeframe Scope
+
+If a script only truly makes sense on one timeframe, say so in config.
+
+Do not make a strategy “multi-timeframe” just because the UI allows it.
+
+## 11. Comment The Why, Not The Obvious
+
+Useful comment:
+
+```pypscript
+// Only allow longs when price structure and momentum agree
+```
+
+Weak comment:
+
+```pypscript
+// Calculate RSI
+momentum = rsi.evaluate(close, 14)
+```
+
+## 12. Write Reviewable Strategies
+
+Ask these questions:
+
+- Can another trader explain the long setup in one sentence?
+- Can they explain the short setup in one sentence?
+- Can they tell when the script is intentionally doing nothing?
+
+If not, simplify.
+
+## Example Of A Clean Script
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import indicators.rsi
+import indicators.atr
+import functions.above
+import functions.below
+import functions.cross
+
+strategy "clean_trend_pullback" {
+    fast_ma = sma.evaluate(close, 20)
+    slow_ma = sma.evaluate(close, 50)
+    rsi_value = rsi.evaluate(close, 14)
+    atr_value = atr.evaluate(high, low, close, 14)
+
+    trend_up = above(fast_ma, slow_ma)
+    trend_down = below(fast_ma, slow_ma)
+    long_momentum = above(rsi_value, 55)
+    short_momentum = below(rsi_value, 45)
+    volatility_ok = above(atr_value, 0.0)
+    long_trigger = cross(close, fast_ma)
+    short_trigger = cross(fast_ma, close)
+
+    patterns {
+        trend_up and long_momentum and long_trigger and volatility_ok -> UP(confidence: 0.85)
+        trend_down and short_momentum and short_trigger and volatility_ok -> DOWN(confidence: 0.85)
+        default -> HOLD(confidence: 0.96)
+    }
+}
+
+meta {
+    author: "PyP"
+    version: "1.0.0"
+    description: "Trend pullback logic for intraday directional moves"
+}
+
+config {
+    pairs: ["EURUSD"]
+    timeframes: ["5m"]
+}
+```
+
+## Final Standard
+
+A strong PyPScript file should feel like:
+
+- a trading thesis
+- translated into a precise decision table
+
+not like:
+
+- a pile of indicator calls
+
+## Related Pages
+
+- [Basics](./basics)
+- [Pattern Matching](./patterns)
+- [Troubleshooting](./troubleshooting)

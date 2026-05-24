@@ -1,0 +1,31 @@
+# Moving Averages
+
+## SMA - Simple Moving Average
+
+Calculates arithmetic mean of prices over a period.
+
+```pypscript
+sma.evaluate(source, period)
+sma.evaluate(close, 20)  // 20-period SMA of close price
+```
+
+**Parameters:**
+- `source`: Price source (close, high, low, open)
+- `period`: Number of periods (1-200)
+
+## EMA - Exponential Moving Average
+
+Gives more weight to recent prices, responds faster.
+
+```pypscript
+ema.evaluate(source, period)
+ema.evaluate(close, 12)  // 12-period EMA
+```
+
+## VWAP - Volume Weighted Average Price
+
+Average price weighted by volume.
+
+```pypscript
+vwap.evaluate()
+```

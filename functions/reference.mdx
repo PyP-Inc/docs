@@ -1,0 +1,153 @@
+# Functions Reference
+
+**Complete reference for all comparison, logical, and relationship functions in PyPScript**
+
+Functions are the building blocks of pattern matching in PyPScript. They compare indicators, detect relationships, and create the conditions that trigger trading signals.
+
+## Comparison Functions
+
+### above()
+Tests if the first value is greater than the second value.
+
+```pypscript
+import functions.above
+
+strategy "above_example" {
+    ma_20 = sma.evaluate(close, 20)
+    
+    patterns {
+        above(close, ma_20) -> UP(confidence: 0.75)
+        default -> HOLD(confidence: 0.95)
+    }
+}
+```
+
+### below()
+Tests if the first value is less than the second value.
+
+```pypscript
+import functions.below
+
+strategy "below_example" {
+    ma_20 = sma.evaluate(close, 20)
+    
+    patterns {
+        below(close, ma_20) -> DOWN(confidence: 0.75)
+        default -> HOLD(confidence: 0.95)
+    }
+}
+```
+
+### between()
+Tests if a value is within a specified range (inclusive).
+
+```pypscript
+import functions.between
+
+strategy "between_example" {
+    rsi_14 = rsi.evaluate(close, 14)
+    
+    patterns {
+        between(rsi_14, 40, 60) -> HOLD(confidence: 0.90)
+        default -> HOLD(confidence: 0.95)
+    }
+}
+```
+
+## Relationship Functions
+
+### cross()
+Detects when the first line crosses **above** the second line.
+
+```pypscript
+import functions.cross
+
+strategy "cross_example" {
+    fast_ma = sma.evaluate(close, 10)
+    slow_ma = sma.evaluate(close, 20)
+    
+    patterns {
+        // fast_ma crosses above slow_ma
+        cross(fast_ma, slow_ma) -> UP(confidence: 0.85)
+        
+        // fast_ma crosses below slow_ma (slow_ma crosses above fast_ma)
+        cross(slow_ma, fast_ma) -> DOWN(confidence: 0.85)
+        
+        default -> HOLD(confidence: 0.95)
+    }
+}
+```
+
+### bounce()
+Detects when price touches a level and reverses direction.
+
+```pypscript
+import functions.bounce
+
+strategy "bounce_example" {
+    support = support.evaluate(low, 20)
+    
+    patterns {
+        bounce(low, support) -> UP(confidence: 0.85)
+        default -> HOLD(confidence: 0.95)
+    }
+}
+```
+
+### reject()
+Detects when price approaches a level but fails to break through.
+
+```pypscript
+import functions.reject
+
+strategy "reject_example" {
+    resistance = resistance.evaluate(high, 20)
+    
+    patterns {
+        reject(high, resistance) -> DOWN(confidence: 0.85)
+        default -> HOLD(confidence: 0.95)
+    }
+}
+```
+
+## Mathematical Functions
+
+- **min(v1, v2)**: Returns the smaller of two values.
+- **max(v1, v2)**: Returns the larger of two values.
+- **average(v1, v2, ...)**: Returns the arithmetic mean of 2-10 values.
+- **change(value)**: Returns the rate of change from the previous period.
+
+## Logical Operators
+
+### and
+All conditions must be true.
+```pypscript
+above(fast, slow) and above(rsi, 50) -> UP(confidence: 0.85)
+```
+
+### or
+At least one condition must be true.
+```pypscript
+below(rsi, 30) or below(stoch, 20) -> UP(confidence: 0.75)
+```
+
+### not
+Inverts the following condition.
+```pypscript
+not above(rsi, 70) -> UP(confidence: 0.70)
+```
+
+## Decision Primitives
+
+PyPScript supports various signal types, all of which accept a confidence value:
+
+- **Directional**: `UP`, `DOWN`, `HOLD`
+- **Actions**: `BUY`, `SELL`, `EXIT`
+- **Conviction**: `STRONG_BUY`, `WEAK_BUY`, `STRONG_SELL`, `WEAK_SELL`
+- **Risk**: `STOP_LOSS`, `TAKE_PROFIT`
+
+## Best Practices
+
+1. **Order of Logic**: Place the most likely conditions first in `and` chains for efficiency.
+2. **Grouping**: Use parentheses `( )` to clarify complex logical expressions.
+3. **Confidence**: Ensure your `default` pattern has a high confidence level (e.g., 0.95) to prevent false signals.

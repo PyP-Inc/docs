@@ -1,0 +1,263 @@
+# Troubleshooting
+
+Most PyPScript problems are not mysterious.
+
+They usually come from one of four places:
+
+- bad structure
+- missing imports
+- broken pattern order
+- logic that is too broad or too restrictive
+
+This page helps you debug the script itself.
+
+## Problem: The File Does Not Validate
+
+Check these first:
+
+- header present
+- engine line present
+- imports above strategy block
+- meta block present
+- `default -> HOLD(...)` present
+
+Minimal valid structure:
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import functions.cross
+
+strategy "valid" {
+    fast_ma = sma.evaluate(close, 10)
+    slow_ma = sma.evaluate(close, 20)
+
+    patterns {
+        cross(fast_ma, slow_ma) -> UP(confidence: 0.80)
+        default -> HOLD(confidence: 0.95)
+    }
+}
+
+meta {
+    author: "PyP"
+    version: "1.0.0"
+    description: "Valid example"
+}
+```
+
+## Problem: “Undefined Variable”
+
+You referenced a name before defining it.
+
+Wrong:
+
+```pypscript
+patterns {
+    trend_up and breakout -> UP(confidence: 0.82)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+Fix:
+
+```pypscript
+trend_up = above(close, trend_ma)
+breakout = cross(close, fast_ma)
+```
+
+## Problem: “Missing Import”
+
+You used a function or indicator but never imported it.
+
+Wrong:
+
+```pypscript
+trend_ma = sma.evaluate(close, 50)
+```
+
+without:
+
+```pypscript
+import indicators.sma
+```
+
+## Problem: Everything Evaluates To `HOLD`
+
+This usually means one of these:
+
+- your conditions are too restrictive
+- the entry rule can almost never be true
+- one regime filter blocks every setup
+- the script logic contradicts itself
+
+Example of impossible logic:
+
+```pypscript
+patterns {
+    above(rsi_value, 70) and below(rsi_value, 30) -> UP(confidence: 0.90)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+That condition can never happen.
+
+## Problem: One Rule Catches Everything
+
+This is a classic ordering bug.
+
+Wrong:
+
+```pypscript
+patterns {
+    above(rsi_value, 50) -> UP(confidence: 0.65)
+    above(rsi_value, 80) -> UP(confidence: 0.92)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+Fix:
+
+```pypscript
+patterns {
+    above(rsi_value, 80) -> UP(confidence: 0.92)
+    above(rsi_value, 50) -> UP(confidence: 0.65)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## Problem: Too Many Signals
+
+Common causes:
+
+- your first rule is too broad
+- confidence is too generous
+- there is no meaningful `HOLD` zone
+- trend filter is too loose
+
+Example of a broad rule:
+
+```pypscript
+patterns {
+    above(close, trend_ma) -> UP(confidence: 0.75)
+    below(close, trend_ma) -> DOWN(confidence: 0.75)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+That may be valid, but it is often too eager.
+
+Try adding:
+
+- momentum filter
+- trigger condition
+- neutral hold state
+
+## Problem: Too Few Signals
+
+Common causes:
+
+- too many stacked filters
+- thresholds are too tight
+- regime filter is always false
+
+Example:
+
+```pypscript
+patterns {
+    trend_up and long_momentum and volatility_ok and breakout and reclaim and not overbought and not extended -> UP(confidence: 0.90)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+That may be so selective it rarely triggers.
+
+If the script never expresses its edge, simplify.
+
+## Problem: Long Side Works, Short Side Does Not
+
+That is often a strategy design issue, not a syntax issue.
+
+Ask:
+
+- are long and short conditions actually symmetric
+- do short thresholds make sense
+- is one side missing a real trigger
+
+Example:
+
+```pypscript
+patterns {
+    trend_up and long_momentum and long_trigger -> UP(confidence: 0.82)
+    trend_down -> DOWN(confidence: 0.82)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+The short side is much looser than the long side.
+
+## Problem: The Script Is Hard To Read
+
+This is usually caused by giant inline expressions.
+
+Refactor:
+
+From:
+
+```pypscript
+patterns {
+    above(close, sma.evaluate(close, 50)) and above(rsi.evaluate(close, 14), 55) and cross(close, sma.evaluate(close, 20)) -> UP(confidence: 0.85)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+To:
+
+```pypscript
+trend_ma = sma.evaluate(close, 50)
+entry_ma = sma.evaluate(close, 20)
+rsi_value = rsi.evaluate(close, 14)
+
+trend_up = above(close, trend_ma)
+momentum_up = above(rsi_value, 55)
+entry_reclaim = cross(close, entry_ma)
+
+patterns {
+    trend_up and momentum_up and entry_reclaim -> UP(confidence: 0.85)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## Practical Debug Checklist
+
+When a script behaves strangely, check:
+
+1. does it parse
+2. are all imports present
+3. are all named variables defined before use
+4. are stronger rules above weaker ones
+5. do any rules overlap badly
+6. do any rules contradict each other
+7. is `default -> HOLD(...)` present
+8. can each pattern be explained in plain English
+
+## Best Debugging Method
+
+Reduce the script until it is obvious.
+
+Start with:
+
+- one trend variable
+- one momentum variable
+- one trigger
+
+Then rebuild from there.
+
+That is usually faster than staring at a giant expression.
+
+## Related Pages
+
+- [Validation](./validation)
+- [Pattern Matching](./patterns)
+- [Best Practices](./best-practices)

@@ -1,0 +1,299 @@
+# PyPScript Basics
+
+PyPScript is the language PyP uses for expressing trading logic in a way that is readable, strict, and easy to review.
+
+It is not a general-purpose programming language. You do not write loops, classes, network calls, or broker code. You define:
+
+- which indicators you need
+- which market conditions matter
+- which signal should be produced when those conditions are true
+
+If you keep that mental model in mind, the language becomes much easier to use.
+
+## What A `.ppc` File Does
+
+A `.ppc` file describes a strategy in four layers:
+
+1. file header and engine version
+2. imports
+3. strategy logic
+4. metadata and optional config
+
+The smallest useful strategy looks like this:
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import functions.cross
+
+strategy "simple_cross" {
+    fast_ma = sma.evaluate(close, 10)
+    slow_ma = sma.evaluate(close, 20)
+
+    patterns {
+        cross(fast_ma, slow_ma) -> UP(confidence: 0.80)
+        cross(slow_ma, fast_ma) -> DOWN(confidence: 0.80)
+        default -> HOLD(confidence: 0.95)
+    }
+}
+
+meta {
+    author: "PyP"
+    version: "1.0.0"
+    description: "Basic moving average crossover"
+}
+
+config {
+    pairs: ["EURUSD"]
+    timeframes: ["1m"]
+}
+```
+
+## The Core Rule
+
+PyPScript is built around this idea:
+
+- define values
+- define conditions
+- map conditions to signals
+
+That means most scripts follow the same rhythm:
+
+```pypscript
+indicator_a = ...
+indicator_b = ...
+condition_a = ...
+condition_b = ...
+
+patterns {
+    condition_a and condition_b -> UP(confidence: 0.85)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## Required Sections
+
+## 1. Header
+
+Every file starts with:
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+```
+
+This tells PyP which language version and engine contract the file expects.
+
+## 2. Imports
+
+You import the indicators and helper functions your script uses.
+
+```pypscript
+import indicators.sma
+import indicators.rsi
+import functions.above
+import functions.below
+import functions.cross
+```
+
+Typical import groups:
+
+- `indicators.*` for calculations such as `sma`, `ema`, `rsi`, `macd`, `atr`
+- `functions.*` for relationships such as `above`, `below`, `between`, `cross`
+
+## 3. Strategy Block
+
+This is where the logic lives.
+
+```pypscript
+strategy "trend_momentum" {
+    trend_ma = sma.evaluate(close, 50)
+    momentum = rsi.evaluate(close, 14)
+
+    trend_up = above(close, trend_ma)
+    momentum_up = above(momentum, 55)
+
+    patterns {
+        trend_up and momentum_up -> UP(confidence: 0.82)
+        default -> HOLD(confidence: 0.95)
+    }
+}
+```
+
+Inside the strategy block you will usually see:
+
+- indicator assignments
+- reusable condition variables
+- a `patterns` block
+
+## 4. Meta Block
+
+The `meta` block describes the strategy.
+
+```pypscript
+meta {
+    author: "Stanley Isaac"
+    version: "1.2.0"
+    description: "Trend and momentum alignment for major FX pairs"
+}
+```
+
+At minimum, keep it human-readable and versioned.
+
+## 5. Config Block
+
+The `config` block defines the target markets and timeframes for the script.
+
+```pypscript
+config {
+    pairs: ["EURUSD", "GBPUSD"]
+    timeframes: ["1m", "5m"]
+}
+```
+
+Use config to state intent clearly. Do not hide market assumptions inside vague naming.
+
+## Built-In Market Inputs
+
+These values are available without importing anything:
+
+- `open`
+- `high`
+- `low`
+- `close`
+- `volume`
+- `pair`
+- `timeframe`
+
+These are the raw market inputs your indicators and functions use.
+
+Example:
+
+```pypscript
+fast_ma = sma.evaluate(close, 10)
+volatility = atr.evaluate(high, low, close, 14)
+```
+
+## How Signals Work
+
+PyPScript does not place orders directly.
+
+It produces one of three signal directions:
+
+- `UP`
+- `DOWN`
+- `HOLD`
+
+Each signal must also include a confidence score:
+
+```pypscript
+UP(confidence: 0.83)
+DOWN(confidence: 0.78)
+HOLD(confidence: 0.95)
+```
+
+Think of confidence as your script saying how strongly the current pattern matches its intended setup.
+
+## The `patterns` Block
+
+This is the decision table of the strategy.
+
+```pypscript
+patterns {
+    cross(fast_ma, slow_ma) and above(momentum, 55) -> UP(confidence: 0.88)
+    cross(slow_ma, fast_ma) and below(momentum, 45) -> DOWN(confidence: 0.88)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+Important behavior:
+
+- patterns are checked from top to bottom
+- the first matching pattern wins
+- `default -> HOLD(...)` should always be present
+
+## A Slightly More Realistic Example
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import indicators.rsi
+import indicators.atr
+import functions.above
+import functions.below
+import functions.cross
+
+strategy "trend_pullback" {
+    fast_ma = sma.evaluate(close, 20)
+    slow_ma = sma.evaluate(close, 50)
+    momentum = rsi.evaluate(close, 14)
+    volatility = atr.evaluate(high, low, close, 14)
+
+    trend_up = above(fast_ma, slow_ma)
+    trend_down = below(fast_ma, slow_ma)
+    pullback_long = above(momentum, 45) and below(momentum, 60)
+    pullback_short = below(momentum, 55) and above(momentum, 40)
+    volatility_ok = above(volatility, 0.0)
+
+    patterns {
+        trend_up and pullback_long and cross(close, fast_ma) and volatility_ok -> UP(confidence: 0.84)
+        trend_down and pullback_short and cross(fast_ma, close) and volatility_ok -> DOWN(confidence: 0.84)
+        default -> HOLD(confidence: 0.96)
+    }
+}
+
+meta {
+    author: "PyP"
+    version: "1.0.0"
+    description: "Trend pullback strategy with RSI and ATR gating"
+}
+
+config {
+    pairs: ["EURUSD"]
+    timeframes: ["5m"]
+}
+```
+
+## What Makes A Good First Script
+
+A good first script is:
+
+- short enough to read in one pass
+- explicit about trend and entry logic
+- conservative with confidence
+- honest about when it should `HOLD`
+
+Avoid making your first strategy:
+
+- too indicator-heavy
+- too clever
+- too dependent on one giant expression
+- impossible to explain in plain English
+
+## Read PyPScript Like Plain Language
+
+This:
+
+```pypscript
+trend_up and pullback_long and cross(close, fast_ma) -> UP(confidence: 0.84)
+```
+
+should read like:
+
+“if the trend is already up, price is in a pullback zone, and price reclaims the fast moving average, emit a long signal.”
+
+That is the standard you want.
+
+If you cannot explain a pattern in one sentence, it probably needs to be simplified.
+
+## Next Pages
+
+Read these next:
+
+- [Syntax Reference](./syntax)
+- [Variables & Data](./variables)
+- [Pattern Matching](./patterns)

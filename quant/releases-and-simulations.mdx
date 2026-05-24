@@ -1,0 +1,68 @@
+# Releases and Simulations
+
+Quant should not stop at "job completed."
+
+The serious downstream flow is:
+
+1. train a job
+2. inspect the artifact
+3. create a release
+4. run simulation
+5. publish
+6. deploy or list on the marketplace
+
+## Quant releases
+
+Quant releases are created from artifacts, not directly from training-job ids.
+
+A release gives you:
+
+- a version identifier
+- release notes
+- a publishable packaging unit
+- simulation linkage
+
+Releases should start as `draft`.
+
+## Why draft state matters
+
+Draft state exists so that an artifact cannot be treated as market-ready before validation.
+
+That is especially important for quant projects, because:
+
+- a successful training job does not prove deployment fitness
+- metrics alone do not prove sequential replay behavior
+- marketplace buyers need release-level proof, not vague model claims
+
+## Quant simulations
+
+Quant simulations should mirror the same operational discipline as PyPScript:
+
+- select a release
+- run the simulation flow
+- store the run
+- analyze it in PPE and PPE-PP
+
+The key difference is that quant simulation should use the quant runtime path for prediction, not the PyPScript brain path.
+
+## PPE and PPE-PP
+
+PPE exists to replay the strategy against real historical candles in sequence.
+
+PPE-PP exists to analyze:
+
+- trade path
+- session behavior
+- drawdown structure
+- edge concentration
+- stop-loss / take-profit geometry
+
+That matters for quant just as much as it does for PyPScript. A release should be publish-gated by actual replay evidence, not by optimistic training output.
+
+## Best practice
+
+- do not deploy raw artifacts straight from jobs
+- create a release
+- simulate the release
+- publish only after the validation story is coherent
+

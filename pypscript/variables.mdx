@@ -1,0 +1,293 @@
+# Variables & Data
+
+Variables are how you turn raw market inputs into readable strategy logic.
+
+In practice, good PyPScript code is mostly:
+
+- clear variable names
+- reusable conditions
+- simple pattern rules built from those variables
+
+## Built-In Data
+
+These values are available automatically:
+
+- `open`
+- `high`
+- `low`
+- `close`
+- `volume`
+- `pair`
+- `timeframe`
+
+These are the base inputs for indicators and conditions.
+
+Example:
+
+```pypscript
+fast_ma = sma.evaluate(close, 10)
+range_size = atr.evaluate(high, low, close, 14)
+```
+
+## Basic Assignment
+
+The assignment form is:
+
+```pypscript
+name = expression
+```
+
+Examples:
+
+```pypscript
+fast_ma = sma.evaluate(close, 10)
+slow_ma = sma.evaluate(close, 20)
+momentum = rsi.evaluate(close, 14)
+```
+
+## What Variables Usually Hold
+
+In PyPScript, variables commonly hold:
+
+- indicator outputs
+- literal thresholds
+- reusable boolean conditions
+
+### Indicator Values
+
+```pypscript
+trend_ma = sma.evaluate(close, 50)
+entry_ma = sma.evaluate(close, 20)
+rsi_value = rsi.evaluate(close, 14)
+atr_value = atr.evaluate(high, low, close, 14)
+```
+
+### Reusable Conditions
+
+```pypscript
+trend_up = above(close, trend_ma)
+momentum_up = above(rsi_value, 55)
+pullback_zone = below(close, entry_ma)
+volatility_ok = above(atr_value, 0.0)
+```
+
+This is one of the cleanest habits in PyPScript:
+
+- calculate once
+- name the meaning
+- reuse the named condition in `patterns`
+
+## Build Conditions In Layers
+
+Instead of writing one giant expression, build named layers.
+
+Less readable:
+
+```pypscript
+patterns {
+    above(close, sma.evaluate(close, 50)) and above(rsi.evaluate(close, 14), 55) and cross(close, sma.evaluate(close, 20)) -> UP(confidence: 0.85)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+Better:
+
+```pypscript
+trend_ma = sma.evaluate(close, 50)
+entry_ma = sma.evaluate(close, 20)
+rsi_value = rsi.evaluate(close, 14)
+
+trend_up = above(close, trend_ma)
+momentum_up = above(rsi_value, 55)
+entry_reclaim = cross(close, entry_ma)
+
+patterns {
+    trend_up and momentum_up and entry_reclaim -> UP(confidence: 0.85)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## Naming Conventions
+
+Prefer names that explain meaning, not implementation noise.
+
+Good:
+
+```pypscript
+trend_ma
+fast_ma
+slow_ma
+trend_up
+trend_down
+momentum_up
+breakout_ready
+volatility_ok
+```
+
+Weak:
+
+```pypscript
+x1
+calc2
+signal_thing
+my_var
+temp
+```
+
+## Distinguish Measurements From Conditions
+
+A useful pattern is to name numeric series and boolean conditions differently.
+
+Numeric series:
+
+```pypscript
+rsi_value = rsi.evaluate(close, 14)
+atr_value = atr.evaluate(high, low, close, 14)
+trend_ma = sma.evaluate(close, 50)
+```
+
+Boolean conditions:
+
+```pypscript
+rsi_bullish = above(rsi_value, 55)
+volatility_ok = above(atr_value, 0.0)
+price_above_trend = above(close, trend_ma)
+```
+
+That keeps the script mentally clean.
+
+## Use Variables To Express Market Logic
+
+This:
+
+```pypscript
+price_above_trend = above(close, trend_ma)
+momentum_confirmed = above(rsi_value, 55)
+```
+
+is much easier to review than:
+
+```pypscript
+above(close, trend_ma) and above(rsi_value, 55)
+```
+
+both in code review and later when you revisit the strategy.
+
+## Reusing Variables Across Multiple Outcomes
+
+Variables help when long and short logic share common pieces.
+
+```pypscript
+fast_ma = sma.evaluate(close, 20)
+slow_ma = sma.evaluate(close, 50)
+rsi_value = rsi.evaluate(close, 14)
+
+trend_up = above(fast_ma, slow_ma)
+trend_down = below(fast_ma, slow_ma)
+momentum_up = above(rsi_value, 55)
+momentum_down = below(rsi_value, 45)
+
+patterns {
+    trend_up and momentum_up -> UP(confidence: 0.82)
+    trend_down and momentum_down -> DOWN(confidence: 0.82)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## Variables In Config Context
+
+Pair and timeframe are part of the environment, and config sets what the strategy targets.
+
+```pypscript
+config {
+    pairs: ["XAUUSD"]
+    timeframes: ["1m"]
+}
+```
+
+Keep the script consistent with the markets it is written for. Do not call a script `gold_scalper` and then leave the config vague.
+
+## Common Mistakes
+
+## 1. Recomputing The Same Thing Repeatedly
+
+Avoid:
+
+```pypscript
+patterns {
+    above(close, sma.evaluate(close, 50)) -> UP(confidence: 0.70)
+    below(close, sma.evaluate(close, 50)) -> DOWN(confidence: 0.70)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+Better:
+
+```pypscript
+trend_ma = sma.evaluate(close, 50)
+
+patterns {
+    above(close, trend_ma) -> UP(confidence: 0.70)
+    below(close, trend_ma) -> DOWN(confidence: 0.70)
+    default -> HOLD(confidence: 0.95)
+}
+```
+
+## 2. Naming A Condition Like A Number
+
+Avoid:
+
+```pypscript
+rsi_55 = above(rsi_value, 55)
+```
+
+Better:
+
+```pypscript
+momentum_up = above(rsi_value, 55)
+```
+
+## 3. Stuffing Everything Into `patterns`
+
+Avoid building unreadable one-liners when named variables would make intent obvious.
+
+## A Clean Example
+
+```pypscript
+#!pyp/1.0
+engine: pyp-1.0
+
+import indicators.sma
+import indicators.rsi
+import indicators.atr
+import functions.above
+import functions.below
+import functions.cross
+
+strategy "clear_variables" {
+    fast_ma = sma.evaluate(close, 20)
+    slow_ma = sma.evaluate(close, 50)
+    rsi_value = rsi.evaluate(close, 14)
+    atr_value = atr.evaluate(high, low, close, 14)
+
+    trend_up = above(fast_ma, slow_ma)
+    trend_down = below(fast_ma, slow_ma)
+    long_momentum = above(rsi_value, 55)
+    short_momentum = below(rsi_value, 45)
+    volatility_ok = above(atr_value, 0.0)
+    long_trigger = cross(close, fast_ma)
+    short_trigger = cross(fast_ma, close)
+
+    patterns {
+        trend_up and long_momentum and long_trigger and volatility_ok -> UP(confidence: 0.84)
+        trend_down and short_momentum and short_trigger and volatility_ok -> DOWN(confidence: 0.84)
+        default -> HOLD(confidence: 0.96)
+    }
+}
+```
+
+## Rule Of Thumb
+
+If a non-programmer trader can read your variable names and roughly explain what the script is doing, your naming is good.
+
+If not, simplify it.

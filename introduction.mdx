@@ -1,0 +1,146 @@
+# PyP Documentation
+
+This documentation is organized around PyP's two strategy-authoring paths:
+
+- **PyPScript** for rule-language strategies
+- **Quant Mode** for Python-based model workflows
+
+If you are here for Quant Mode, start with [What Is Quant Mode?](/docs/quant/what-is-quant-mode) instead of the PyPScript language reference.
+
+If you are new to the language, do not start with the reference pages. Start with the pages that explain how a `.ppc` file is structured and how rules are evaluated.
+
+## Recommended path
+
+1. Read [PyPScript Basics](/docs/pypscript/basics) to understand file structure, imports, assignments, and rule flow.
+2. Read [Syntax Reference](/docs/pypscript/syntax) to see the exact shape of expressions and pattern clauses.
+3. Read [Variables & Data](/docs/pypscript/variables) to understand what data your rules can safely use.
+4. Read [Pattern Matching](/docs/pypscript/patterns) to learn how the engine chooses the final signal.
+5. Use [Indicator Reference](/docs/indicators/reference) and [Function Reference](/docs/functions/reference) when you need exact signatures.
+
+## Recommended Quant Mode path
+
+1. Read [What Is Quant Mode?](/docs/quant/what-is-quant-mode) to understand when Quant Mode is the right fit.
+2. Read [Research Workspace](/docs/quant/research-workspace) to understand the supported project shape.
+3. Read [Strategy Contract](/docs/quant/strategy-contract) to see the exact `train()` and `predict()` expectations.
+4. Read [quant.config.json](/docs/quant/quant-config) to understand runtime, parameters, and requirements.
+5. Continue into [Artifacts & Model Formats](/docs/quant/artifacts-and-model-formats) and [Releases & Simulations](/docs/quant/releases-and-simulations).
+
+## What PyPScript is for
+
+PyPScript is a rule-oriented strategy language for expressing market logic clearly.
+
+You use it to define:
+
+- the market pairs and timeframes a strategy targets
+- the indicators and helper functions it imports
+- intermediate signals such as trend, momentum, confirmation, and filters
+- final pattern rules that emit `UP`, `DOWN`, or `HOLD`
+
+PyPScript is designed to make strategies:
+
+- readable by humans
+- deterministic in evaluation order
+- easy to revise without turning into unreadable spaghetti
+
+## What makes a good PyPScript strategy
+
+A strong `.ppc` file usually has three layers:
+
+1. **Inputs and indicators**
+   - moving averages, RSI, ATR, MACD, or other raw components
+2. **Intermediate logic**
+   - named conditions such as `bullish_trend`, `volatile_enough`, or `cross_confirmed`
+3. **Pattern rules**
+   - final ordered entries inside `patterns { ... }`
+
+That structure matters. When a strategy is too clever too early, it becomes hard to debug. When it is broken into named stages, the intent stays obvious.
+
+## Core ideas to remember
+
+- Rules are evaluated in order.
+- The first matching pattern wins.
+- `default -> HOLD(...)` should be explicit.
+- Confidence is part of the output, not just decoration.
+- Intermediate variables are there to improve clarity, not to mimic general-purpose programming.
+
+## Best pages to keep open while writing
+
+- [PyPScript Basics](/docs/pypscript/basics)
+- [Pattern Matching](/docs/pypscript/patterns)
+- [Validation](/docs/pypscript/validation)
+- [Troubleshooting](/docs/pypscript/troubleshooting)
+
+## Reference map
+
+### Learn the language
+
+- [PyPScript Basics](/docs/pypscript/basics)
+- [Syntax Reference](/docs/pypscript/syntax)
+- [Variables & Data](/docs/pypscript/variables)
+- [Multi-Timeframe](/docs/pypscript/multi-timeframe)
+- [Advanced Techniques](/docs/pypscript/advanced)
+
+### Build with Quant Mode
+
+- [What Is Quant Mode?](/docs/quant/what-is-quant-mode)
+- [Research Workspace](/docs/quant/research-workspace)
+- [Strategy Contract](/docs/quant/strategy-contract)
+- [quant.config.json](/docs/quant/quant-config)
+- [Training Jobs](/docs/quant/training-jobs)
+- [Artifacts & Model Formats](/docs/quant/artifacts-and-model-formats)
+- [Releases & Simulations](/docs/quant/releases-and-simulations)
+- [Live Deployment](/docs/quant/live-deployment)
+- [Marketplace for Quants](/docs/quant/marketplace-for-quants)
+- [Quant FAQ](/docs/quant/faq)
+
+### Design better rules
+
+- [Pattern Matching](/docs/pypscript/patterns)
+- [Best Practices](/docs/pypscript/best-practices)
+- [Validation](/docs/pypscript/validation)
+- [Troubleshooting](/docs/pypscript/troubleshooting)
+- [FAQ](/docs/pypscript/faq)
+
+### Look up exact syntax
+
+- [Indicator Reference](/docs/indicators/reference)
+- [Moving Averages](/docs/indicators/moving-averages)
+- [Oscillators](/docs/indicators/oscillators)
+- [Volatility Indicators](/docs/indicators/volatility)
+- [Function Reference](/docs/functions/reference)
+
+## A simple mental model
+
+Think of a `.ppc` file like this:
+
+```pypscript
+config {
+  pairs: ["EURUSD"]
+  timeframes: ["1m"]
+}
+
+use indicators.sma
+use indicators.rsi
+use functions.above
+use functions.cross
+
+fast = sma(20)
+slow = sma(50)
+strength = rsi(14)
+
+patterns {
+  cross(fast, slow) and above(strength, 55) -> UP(0.82)
+  default -> HOLD(0.40)
+}
+```
+
+That is the rhythm of the language:
+
+- define the market scope
+- import what you need
+- compute named intermediate values
+- emit final ordered signals
+
+## Where to go next
+
+If you want to write your first serious strategy, go straight to [PyPScript Basics](/docs/pypscript/basics). If you already know the rough shape of the language and just need exact grammar, open [Syntax Reference](/docs/pypscript/syntax).

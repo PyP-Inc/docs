@@ -1,0 +1,20 @@
+# Telegram Integration
+
+Receive PyP signals directly in Telegram.
+
+Telegram is one deployment channel, not the entire deployment system. If you need broader runtime setup, use the deployments flow and add Telegram as one of the attached channels.
+
+## Setup
+
+1. **Create a bot** - Message @BotFather on Telegram
+2. **Get the token** - Copy the API token from BotFather
+3. **Link in PyP** - Go to Settings → Integrations → Telegram, paste token
+4. **Attach Telegram to a deployment** - In PyP, connect the bot and select it as a delivery channel for a live deployment
+
+## Bot Commands
+
+| Command | Description |
+|---------|-------------|
+| /signal | Get current signal |
+| /status | Check status |
+| /help | Help |

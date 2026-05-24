@@ -1,0 +1,76 @@
+# Built-in Indicators Reference
+
+**Complete reference for technical indicators available in PyPScript**
+
+PyPScript includes professional-grade technical indicators across multiple categories, each optimized for deterministic computation and consistent results. All indicators support multi-timeframe analysis and cross-pair compatibility.
+
+## Indicator Categories
+
+### Moving Averages
+- **Simple Moving Average (SMA)**: Smooths price data to identify trend direction.
+- **Exponential Moving Average (EMA)**: More responsive to recent price changes than SMA.
+- **Weighted Moving Average (WMA)**: Linear weighting with most recent prices having highest weight.
+- **Volume Weighted Average Price (VWAP)**: Price weighted by volume, shows fair value.
+- **Hull Moving Average (HMA)**: Reduces lag while maintaining smoothness.
+
+### Oscillators
+- **MACD**: Shows relationship between two moving averages.
+- **Relative Strength Index (RSI)**: Measures speed and magnitude of price changes (0-100 scale).
+- **Stochastic Oscillator**: Compares a particular closing price of a security to a range of its prices over a certain period of time.
+- **Williams %R**: Momentum indicator similar to Stochastic but inverted.
+- **Stochastic RSI**: Applies stochastic formula to RSI values.
+
+### Volatility
+- **Average True Range (ATR)**: Measures market volatility.
+- **Bollinger Bands (Upper/Lower/Width/%)**: Volatility bands placed above and below a moving average.
+- **Keltner Channels**: ATR-based volatility channels.
+- **Donchian Channels**: Identifies breakouts and breakdowns based on high/low ranges.
+
+### Pattern Recognition
+- **Fractals**: Identifies potential reversal points through swing highs and lows.
+- **Pivot Points**: Standard, Camarilla, and Woodie's pivot calculations for support/resistance.
+- **Support & Resistance**: Dynamic identification of key price levels.
+- **Candlestick Patterns**: Hammer, Doji, Engulfing, Shooting Star, and more.
+
+### Market Structure
+- **Higher Highs / Higher Lows**: Identification of uptrend structure.
+- **Lower Highs / Lower Lows**: Identification of downtrend structure.
+- **Market Structure Assessment**: Overall assessment of trend and range states.
+- **Order Blocks**: Identification of institutional interest areas.
+
+## Usage Example
+
+```pypscript
+import indicators.sma
+import indicators.rsi
+
+strategy "multi_indicator" {
+    ma_50 = sma.evaluate(close, 50)
+    rsi_14 = rsi.evaluate(close, 14)
+    
+    patterns {
+        above(close, ma_50) and below(rsi_14, 30) -> UP(confidence: 0.85)
+        default -> HOLD(confidence: 0.95)
+    }
+}
+```
+
+## Performance Considerations
+
+### Optimized Computation
+All indicators are optimized for:
+- **Memory usage**: Minimal footprint even with large lookback periods.
+- **Computation speed**: Highly efficient internal processing for real-time results.
+- **Accuracy**: Professional-grade precision for all calculations.
+
+### Best Practices
+- **Focus**: Use 5-7 indicators maximum per strategy for best results.
+- **Validation**: Test on multiple timeframes and pairs using the PPE engine.
+- **Efficiency**: Reuse indicator results instead of declaring the same indicator multiple times.
+
+---
+
+For detailed parameters and return values for each indicator, visit the specific category pages:
+- [Moving Averages](./moving-averages)
+- [Oscillators](./oscillators)
+- [Volatility](./volatility)

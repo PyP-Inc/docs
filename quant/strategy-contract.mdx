@@ -1,0 +1,119 @@
+# Strategy Contract
+
+Quant Mode strategies must define a stable training and inference contract.
+
+The current core contract is:
+
+```python
+def train(data, config):
+    ...
+    return model, metrics
+
+def predict(model, market_data, config):
+    ...
+    return {
+        "signal": "UP" | "DOWN" | "HOLD",
+        "confidence": 0.0,
+        "metadata": {}
+    }
+```
+
+## `train(data, config)`
+
+`train()` receives:
+
+- `data`
+  - a pandas dataframe built from PyP market data
+- `config`
+  - the parsed `quant.config.json` content
+
+It must return:
+
+- `model`
+  - artifact-ready model payload or exported model reference depending on artifact target
+- `metrics`
+  - JSON-serializable metrics summary
+
+Example:
+
+```python
+def train(data, config):
+    closes = data["close"].astype(float)
+    lookback = int(config.get("parameters", {}).get("lookback", 5))
+    window = closes.tail(max(lookback + 1, 2)).tolist()
+    deltas = [window[i] - window[i - 1] for i in range(1, len(window))]
+    bias = float(sum(deltas) / max(len(deltas), 1))
+    model = {"lookback": lookback, "bias": bias}
+    metrics = {"accuracy": 0.51, "lookback": lookback}
+    return model, metrics
+```
+
+## `predict(model, market_data, config)`
+
+`predict()` receives:
+
+- `model`
+  - the stored artifact payload or exact model reference restored by the runtime
+- `market_data`
+  - the live or simulated candle payload
+- `config`
+  - the same strategy config used during training
+
+It must return a prediction object.
+
+Required fields:
+
+- `signal`
+  - `UP`, `DOWN`, or `HOLD`
+- `confidence`
+  - numeric score between `0` and `1`
+
+Optional fields:
+
+- `pair`
+- `timeframe`
+- `metadata`
+
+Example:
+
+```python
+def predict(model, market_data, config):
+    candles = market_data.get("candles", [])
+    if len(candles) < 2:
+        return {"signal": "HOLD", "confidence": 0.0, "metadata": {"reason": "not_enough_candles"}}
+
+    previous_close = float(candles[-2][3])
+    latest_close = float(candles[-1][3])
+    delta = latest_close - previous_close
+    threshold = abs(float(model.get("bias", 0.0))) * 0.25
+
+    if delta > threshold:
+        return {"signal": "UP", "confidence": 0.72, "metadata": {"delta": delta}}
+    if delta < -threshold:
+        return {"signal": "DOWN", "confidence": 0.72, "metadata": {"delta": delta}}
+    return {"signal": "HOLD", "confidence": 0.15, "metadata": {"delta": delta}}
+```
+
+## Output normalization
+
+Live runtime normalizes the returned prediction.
+
+That means PyP validates:
+
+- signal shape
+- confidence range
+- pair consistency
+- timeframe consistency
+
+If the returned object is invalid, the runtime falls back to a normalized `HOLD` error response instead of dispatching an unsafe signal.
+
+## Practical guidance
+
+- keep `predict()` fast
+- do not rely on training-only side effects
+- do not return raw framework objects
+- keep `metrics` JSON-safe
+- keep `metadata` descriptive but small
+
+The goal is not just to train. The goal is to make the strategy deployable and simulation-safe.
+

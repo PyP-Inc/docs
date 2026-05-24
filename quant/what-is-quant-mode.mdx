@@ -1,0 +1,68 @@
+# What Is Quant Mode?
+
+Quant Mode is PyP's Python-based strategy workflow for quantitative traders, prop researchers, and systematic signal builders.
+
+It exists for the cases where a `.ppc` strategy language is not the right abstraction and you want to work directly with Python code, model artifacts, and deployment-ready signal contracts.
+
+Quant Mode is not a notebook host and it is not a generic backtesting sandbox. It is a structured pipeline:
+
+1. Write a strategy in `strategy.py`
+2. Define runtime and training configuration in `quant.config.json`
+3. Launch a quant job against PyP market data
+4. Produce a versioned artifact
+5. Validate the release with simulation and PPE / PPE-PP
+6. Deploy live signals to channels and terminals
+7. Publish verified releases to the marketplace
+
+## When to use Quant Mode
+
+Use Quant Mode when:
+
+- you want to write plain Python instead of PyPScript
+- your strategy is model-based rather than rule-language-based
+- you need `train(data, config)` and `predict(model, market_data, config)` directly
+- you care about artifacts, releases, and live runtime behavior as first-class platform concepts
+
+Use PyPScript when:
+
+- you want a readable rule language for pattern-based strategies
+- you are expressing deterministic market logic rather than training a model artifact
+- the strategy should stay inside PyP's native strategy-authoring abstraction
+
+## The Quant project shell
+
+Quant projects live under a dedicated shell:
+
+- `/projects/quant/new`
+- `/<user>/<project>/quant/research`
+- `/<user>/<project>/quant/datasets`
+- `/<user>/<project>/quant/jobs`
+- `/<user>/<project>/quant/artifacts`
+- `/<user>/<project>/quant/releases`
+- `/<user>/<project>/quant/simulations`
+- `/<user>/<project>/quant/deploy`
+
+That separation is deliberate. Quant should feel like its own technical workflow, not like a few extra controls bolted onto the PyPScript editor.
+
+## What makes Quant Mode different
+
+Quant Mode is built around:
+
+- Python strategy code
+- explicit model artifacts
+- release state
+- simulation-backed publish gating
+- runtime-aware deployment
+
+The deployable contract is not "some code ran once." The deployable contract is a release backed by an artifact and validated through the same downstream lifecycle PyP uses for real signal products.
+
+## Recommended reading order
+
+1. [Research Workspace](/docs/quant/research-workspace)
+2. [Strategy Contract](/docs/quant/strategy-contract)
+3. [quant.config.json](/docs/quant/quant-config)
+4. [Training Jobs](/docs/quant/training-jobs)
+5. [Artifacts & Model Formats](/docs/quant/artifacts-and-model-formats)
+6. [Releases & Simulations](/docs/quant/releases-and-simulations)
+7. [Live Deployment](/docs/quant/live-deployment)
+
